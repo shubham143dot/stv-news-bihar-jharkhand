@@ -23,6 +23,13 @@ export default function ImageKitUploader({
 
   const uploadFile = async (file: File) => {
     setError("");
+    
+    // Check file size (100MB limit)
+    if (file.size > 100 * 1024 * 1024) {
+      setError("File size exceeds 100MB. Please choose a smaller file.");
+      return;
+    }
+
     setUploading(true);
 
     try {
@@ -123,7 +130,7 @@ export default function ImageKitUploader({
                 Click to upload or drag & drop
               </p>
               <p className="text-xs text-gray-400 mt-1">
-                JPG, PNG, WebP, MP4 — Max 50MB
+                JPG, PNG, WebP, MP4 — Max 100MB
               </p>
               <div className="flex gap-3 mt-3 text-gray-400">
                 <ImageIcon className="w-5 h-5" />
