@@ -204,22 +204,39 @@ export default async function PostPage({ params }: PostPageProps) {
               const isHeader = /^[\u{1F300}-\u{1F9FF}].*/u.test(trimmed) || 
                                trimmed.includes('News Headlines') || 
                                trimmed.includes('Detailed News Report') ||
-                               (trimmed.length < 50 && trimmed.endsWith(':') && !trimmed.includes('Location') && !trimmed.includes('Date'));
+                               trimmed.includes('मुख्य समाचार') ||
+                               trimmed.includes('विस्तृत रिपोर्ट') ||
+                               (trimmed.length < 50 && trimmed.endsWith(':') && !trimmed.includes('Location') && !trimmed.includes('Date') && !trimmed.includes('स्थान') && !trimmed.includes('तारीख'));
 
               if (isHeader) {
+                let headerText = trimmed;
+                if (trimmed.includes('News Headlines') || trimmed.includes('मुख्य समाचार')) {
+                  headerText = lang === 'en' ? 'News Headlines' : 'मुख्य समाचार';
+                } else if (trimmed.includes('Detailed News Report') || trimmed.includes('विस्तृत रिपोर्ट')) {
+                  headerText = lang === 'en' ? 'Detailed News Report' : 'विस्तृत रिपोर्ट';
+                }
+
                 return (
                   <h2 key={index} className="text-xl sm:text-2xl font-black text-gray-900 border-l-4 border-red-600 pl-4 my-8 flex items-center gap-3 bg-gray-50 py-2 pr-4 rounded-r-lg">
-                    {trimmed}
+                    {headerText}
                   </h2>
                 );
               }
 
               // Handle metadata lines like Location: or Date:
-              if (trimmed.includes('Location:') || trimmed.includes('Date:')) {
+              const isLocation = trimmed.includes('Location:') || trimmed.includes('स्थान:');
+              const isDate = trimmed.includes('Date:') || trimmed.includes('तारीख:');
+
+              if (isLocation || isDate) {
+                const label = isLocation 
+                  ? (lang === 'en' ? 'Location' : 'स्थान') 
+                  : (lang === 'en' ? 'Date' : 'तारीख');
+                const value = trimmed.split(':').slice(1).join(':').trim();
+
                 return (
                   <div key={index} className="text-xs font-bold uppercase tracking-wider text-red-600 bg-red-50/50 px-3 py-1.5 rounded border border-red-100 mb-4 inline-flex items-center gap-2 mr-3">
                     <span className="w-1.5 h-1.5 rounded-full bg-red-600 animate-pulse" />
-                    {trimmed}
+                    {label}: {value}
                   </div>
                 );
               }
