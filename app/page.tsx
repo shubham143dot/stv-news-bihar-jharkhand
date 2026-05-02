@@ -1,65 +1,154 @@
+// app/page.tsx
+import { Suspense } from "react";
+import { Metadata } from "next";
 import Image from "next/image";
+import PostGrid from "@/components/post/PostGrid";
+import Sidebar from "@/components/layout/Sidebar";
+import Pagination from "@/components/ui/Pagination";
+import TranslatableText from "@/components/ui/TranslatableText";
+import CategoryStrip from "@/components/ui/CategoryStrip";
+import HeroLinks from "@/components/ui/HeroLinks";
+import { PageSpinner } from "@/components/ui/Spinner";
+import { getPostsServer } from "@/lib/firebase/posts-admin";
+import { Post } from "@/lib/firebase/posts";
+import { SITE_NAME, SITE_DESCRIPTION, POSTS_PER_PAGE } from "@/lib/utils/constants";
 
-export default function Home() {
+export const metadata: Metadata = {
+  title: SITE_NAME,
+  description: SITE_DESCRIPTION,
+};
+
+export const revalidate = 60;
+
+interface HomePageProps {
+  searchParams: Promise<{ page?: string }>;
+}
+
+export default async function HomePage({ searchParams }: HomePageProps) {
+  const params = await searchParams;
+  const currentPage = Math.max(1, parseInt(params.page || "1", 10));
+
+  let posts: Post[] = [];
+  let error: string | null = null;
+
+  try {
+    const result = await getPostsServer(POSTS_PER_PAGE);
+    posts = result.posts;
+  } catch (e) {
+    console.error("Error fetching posts:", e);
+    error = "खबरें लोड नहीं हो सकीं।";
+  }
+
   return (
-    <div className="flex flex-col flex-1 items-center justify-center bg-zinc-50 font-sans dark:bg-black">
-      <main className="flex flex-1 w-full max-w-3xl flex-col items-center justify-between py-32 px-16 bg-white dark:bg-black sm:items-start">
-        <Image
-          className="dark:invert"
-          src="/next.svg"
-          alt="Next.js logo"
-          width={100}
-          height={20}
-          priority
-        />
-        <div className="flex flex-col items-center gap-6 text-center sm:items-start sm:text-left">
-          <h1 className="max-w-xs text-3xl font-semibold leading-10 tracking-tight text-black dark:text-zinc-50">
-            To get started, edit the page.tsx file.
-          </h1>
-          <p className="max-w-md text-lg leading-8 text-zinc-600 dark:text-zinc-400">
-            Looking for a starting point or more instructions? Head over to{" "}
-            <a
-              href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Templates
-            </a>{" "}
-            or the{" "}
-            <a
-              href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Learning
-            </a>{" "}
-            center.
-          </p>
+    <div className="min-h-screen bg-gray-50">
+      {/* ── Hero Banner ── */}
+      <section className="hero-gradient text-white relative overflow-hidden">
+        {/* Decorative blobs */}
+        <div className="absolute inset-0 pointer-events-none">
+          <div className="absolute top-0 right-0 w-80 h-80 bg-white/5 rounded-full -translate-y-1/2 translate-x-1/3 blur-3xl" />
+          <div className="absolute bottom-0 left-0 w-60 h-60 bg-white/5 rounded-full translate-y-1/2 -translate-x-1/4 blur-3xl" />
         </div>
-        <div className="flex flex-col gap-4 text-base font-medium sm:flex-row">
-          <a
-            className="flex h-12 w-full items-center justify-center gap-2 rounded-full bg-foreground px-5 text-background transition-colors hover:bg-[#383838] dark:hover:bg-[#ccc] md:w-[158px]"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <Image
-              className="dark:invert"
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={16}
-              height={16}
-            />
-            Deploy Now
-          </a>
-          <a
-            className="flex h-12 w-full items-center justify-center rounded-full border border-solid border-black/[.08] px-5 transition-colors hover:border-transparent hover:bg-black/[.04] dark:border-white/[.145] dark:hover:bg-[#1a1a1a] md:w-[158px]"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Documentation
-          </a>
+
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10 sm:py-14 relative z-10">
+          <div className="grid grid-cols-1 lg:grid-cols-[1fr_280px] gap-8 items-center">
+
+            {/* Left: headline + links */}
+            <div className="fade-in-up">
+              <div className="flex flex-col sm:flex-row sm:items-center gap-4 mb-6">
+                <div className="inline-flex items-center gap-2 bg-white/10 backdrop-blur-sm border border-white/20 rounded-full px-4 py-1.5 text-xs font-bold uppercase tracking-wider">
+                  <span className="w-2 h-2 rounded-full bg-red-300 animate-pulse" />
+                  <TranslatableText tKey="liveBreaking" />
+                </div>
+              </div>
+
+              <h1 className="text-3xl sm:text-5xl font-black leading-[1.1] mb-3 drop-shadow-md">
+                <TranslatableText tKey="heroTitle" />
+                <span className="block text-yellow-300 mt-1 drop-shadow-sm">
+                   <TranslatableText tKey="heroSubtitle" />
+                </span>
+              </h1>
+
+              <p className="text-white/90 text-base sm:text-lg leading-relaxed mb-6 max-w-xl drop-shadow-sm font-medium">
+                <TranslatableText tKey="heroDesc" />
+              </p>
+
+              {/* Category chips — client component for language switching */}
+              <HeroLinks />
+            </div>
+
+            {/* Right: REAL logo — Rounded and premium */}
+            <div className="hidden lg:flex justify-center items-center">
+              <div className="relative w-[240px] h-[240px] rounded-full overflow-hidden ring-[8px] ring-yellow-400 shadow-[0_20px_50px_rgba(0,0,0,0.3)] logo-glow">
+                <Image
+                  src="/logo.jpg"
+                  alt="STV News Bihar Jharkhand — Aap Ko Rakhe Aage"
+                  fill
+                  className="object-cover"
+                  style={{ objectPosition: "50% 45%" }}
+                  priority
+                  sizes="240px"
+                />
+              </div>
+            </div>
+          </div>
         </div>
-      </main>
+      </section>
+
+      {/* ── Category strip — client component for language switching ── */}
+      <div className="bg-white border-b border-gray-200 shadow-sm sticky top-[108px] z-40">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <CategoryStrip />
+        </div>
+      </div>
+
+      {/* ── Main content ── */}
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        <div className="grid grid-cols-1 lg:grid-cols-4 gap-8">
+          {/* Posts */}
+          <div className="lg:col-span-3">
+            <div className="flex items-center justify-between mb-5">
+              <h2 className="text-xl font-black text-gray-900 flex items-center gap-2.5">
+                <span className="w-[4px] h-7 bg-red-600 rounded-full inline-block" />
+                <TranslatableText tKey="latestNews" />
+              </h2>
+              <span className="text-xs text-gray-400 font-medium bg-gray-100 px-3 py-1 rounded-full">
+                Page {currentPage}
+              </span>
+            </div>
+
+            {error ? (
+              <div className="flex flex-col items-center justify-center py-20 text-center bg-white rounded-2xl border border-dashed border-gray-200">
+                <span className="text-6xl mb-4">⚠️</span>
+                <p className="font-semibold text-gray-600">{error}</p>
+                <p className="text-sm text-gray-400 mt-2 max-w-xs">
+                  Firebase credentials को .env.local में जोड़ें, फिर server restart करें।
+                </p>
+              </div>
+            ) : (
+              <Suspense fallback={<PageSpinner />}>
+                <PostGrid posts={posts} />
+                {posts.length >= POSTS_PER_PAGE && (
+                  <Pagination currentPage={currentPage} totalPages={450} />
+                )}
+              </Suspense>
+            )}
+          </div>
+
+          {/* Sidebar */}
+          <div className="lg:col-span-1">
+            <Suspense
+              fallback={
+                <div className="space-y-4">
+                  <div className="skeleton h-48 rounded-2xl" />
+                  <div className="skeleton h-64 rounded-2xl" />
+                </div>
+              }
+            >
+              <Sidebar />
+            </Suspense>
+          </div>
+        </div>
+      </div>
     </div>
   );
 }

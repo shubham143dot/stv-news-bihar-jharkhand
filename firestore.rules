@@ -1,0 +1,109 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // ============================================================
+    // Helper Functions
+    // ============================================================
+
+    function isAuthenticated() {
+      return request.auth != null;
+    }
+
+    function isOwner(userId) {
+      return isAuthenticated() && request.auth.uid == userId;
+    }
+
+    function isAdmin() {
+      return isAuthenticated() &&
+        (request.auth.token.email == "alonesourav310@gmail.com" ||
+         (exists(/databases/$(database)/documents/users/$(request.auth.uid)) &&
+          get(/databases/$(database)/documents/users/$(request.auth.uid)).data.isAdmin == true));
+    }
+
+    function isValidPost() {
+      let data = request.resource.data;
+      return data.keys().hasAll(['title', 'slug', 'imageUrl', 'createdAt']) &&
+             data.title is string &&
+             data.title.size() > 0 &&
+             data.title.size() <= 500 &&
+             data.slug is string;
+    }
+
+    function isValidComment() {
+      let data = request.resource.data;
+      let isActuallyAdmin = isAdmin();
+      
+      return data.keys().hasAll(['postId', 'userId', 'comment', 'timestamp', 'displayName', 'photoURL']) &&
+             data.comment is string &&
+             data.comment.size() > 0 &&
+             data.comment.size() <= 500 &&
+             data.userId == request.auth.uid &&
+             // Only admins can set isAdmin: true
+             (data.isAdmin == false || (data.isAdmin == true && isActuallyAdmin));
+    }
+
+    // ============================================================
+    // Posts Collection
+    // ============================================================
+
+    match /posts/{postId} {
+      // Anyone can read published posts
+      allow read: if resource.data.published == true || isAdmin();
+
+      // Only admin can create/update/delete posts
+      allow create: if isAdmin() && isValidPost();
+      allow update: if isAdmin();
+      allow delete: if isAdmin();
+
+      // ---- Likes Subcollection ----
+      match /likes/{userId} {
+        // Anyone can read likes (to check count)
+        allow read: if true;
+
+        // Only the like owner can write their own like
+        allow write: if isAuthenticated() && isOwner(userId);
+      }
+    }
+
+    // ============================================================
+    // Comments Collection
+    // ============================================================
+
+    match /comments/{commentId} {
+      // Anyone can read comments
+      allow read: if true;
+
+      // Authenticated users can create their own comments
+      allow create: if isAuthenticated() && isValidComment();
+
+      // Users can delete own comments; admins can delete any
+      allow delete: if isAuthenticated() &&
+        (resource.data.userId == request.auth.uid || isAdmin());
+
+      // No comment editing (to prevent abuse)
+      allow update: if false;
+    }
+
+    // ============================================================
+    // Users Collection
+    // ============================================================
+
+    match /users/{userId} {
+      // Users can read their own profile; admins can read all
+      allow read: if isAuthenticated() && (isOwner(userId) || isAdmin());
+
+      // Users can create their own profile on first login
+      allow create: if isAuthenticated() && isOwner(userId) &&
+        (request.resource.data.isAdmin == false || request.auth.token.email == "alonesourav310@gmail.com");
+
+      // Users can update their own profile but CANNOT change isAdmin (unless they are the designated admin)
+      allow update: if isAuthenticated() && isOwner(userId) &&
+        (!request.resource.data.diff(resource.data).affectedKeys().hasAny(['isAdmin']) || 
+         request.auth.token.email == "alonesourav310@gmail.com");
+
+      // Only admins can delete user records
+      allow delete: if isAdmin();
+    }
+  }
+}
