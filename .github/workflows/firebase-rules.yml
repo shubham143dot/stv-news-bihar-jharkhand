@@ -6,6 +6,9 @@ on:
     paths:
       - 'firestore.rules'
       - 'firestore.indexes.json'
+      - '.github/workflows/firebase-rules.yml'
+      - '.firebaserc'
+  workflow_dispatch:
 
 jobs:
   deploy:
