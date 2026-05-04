@@ -5,6 +5,7 @@ import { useState, useRef } from "react";
 import Image from "next/image";
 import { Upload, X, Image as ImageIcon, Film } from "lucide-react";
 import Spinner from "@/components/ui/Spinner";
+import { useLanguage } from "@/lib/context/LanguageContext";
 
 interface ImageKitUploaderProps {
   onUpload: (url: string, type: "image" | "video") => void;
@@ -15,8 +16,12 @@ export default function ImageKitUploader({
   onUpload,
   currentUrl,
 }: ImageKitUploaderProps) {
+  const { t } = useLanguage();
   const [uploading, setUploading] = useState(false);
   const [preview, setPreview] = useState(currentUrl || "");
+  const [previewType, setPreviewType] = useState<"image" | "video">(
+    currentUrl?.match(/\.(mp4|webm|ogg|mov)$/i) ? "video" : "image"
+  );
   const [error, setError] = useState("");
   const [dragOver, setDragOver] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -26,7 +31,8 @@ export default function ImageKitUploader({
     
     // Check file size (100MB limit)
     if (file.size > 100 * 1024 * 1024) {
-      setError("File size exceeds 100MB. Please choose a smaller file.");
+      setError(`${t("maxFileSize") || "File size exceeds 100MB"}. Please choose a smaller file.`);
+      setUploading(false);
       return;
     }
 
@@ -35,33 +41,63 @@ export default function ImageKitUploader({
     try {
       // Step 1: Get auth token from our server
       const authRes = await fetch("/api/imagekit-auth");
-      if (!authRes.ok) throw new Error("Auth token fetch failed");
+      if (!authRes.ok) {
+        const errorData = await authRes.json().catch(() => ({}));
+        throw new Error(errorData.error || "Auth token fetch failed");
+      }
       const { token, expire, signature } = await authRes.json();
 
       // Step 2: Upload to ImageKit
       const formData = new FormData();
-      formData.append("file", file);
-      formData.append("fileName", `${Date.now()}-${file.name}`);
-      formData.append("publicKey", process.env.NEXT_PUBLIC_IMAGEKIT_PUBLIC_KEY!);
+      
+      // IMPORTANT: Add all non-file fields first
+      formData.append("publicKey", process.env.NEXT_PUBLIC_IMAGEKIT_PUBLIC_KEY || "");
       formData.append("signature", signature);
       formData.append("expire", expire);
       formData.append("token", token);
       formData.append("folder", "/stv-news");
+      
+      // Sanitize filename to avoid issues with special characters or spaces
+      const sanitizedName = file.name.replace(/[^a-zA-Z0-9.-]/g, "_");
+      formData.append("fileName", `${Date.now()}-${sanitizedName}`);
+      
+      // IMPORTANT: The 'file' field should be the LAST field in the FormData
+      formData.append("file", file);
 
       const uploadRes = await fetch(
         "https://upload.imagekit.io/api/v1/files/upload",
-        { method: "POST", body: formData }
+        { 
+          method: "POST", 
+          body: formData,
+          // No need to set headers, fetch sets multipart boundary automatically
+        }
       );
 
-      if (!uploadRes.ok) throw new Error("Upload failed");
-      const data = await uploadRes.json();
+      if (!uploadRes.ok) {
+        const errorText = await uploadRes.text();
+        console.error("ImageKit upload error response:", errorText);
+        
+        try {
+          const errorJson = JSON.parse(errorText);
+          throw new Error(errorJson.message || "Upload failed");
+        } catch {
+          throw new Error(`Upload failed with status: ${uploadRes.status}`);
+        }
+      }
 
+      const data = await uploadRes.json();
       const fileType = file.type.startsWith("video/") ? "video" : "image";
+      
+      setPreviewType(fileType);
       setPreview(data.url);
       onUpload(data.url, fileType);
-    } catch (err) {
-      setError("Upload failed. Please try again.");
-      console.error(err);
+      
+    } catch (err: any) {
+      console.error("Upload process error:", err);
+      const msg = err.message || "Upload failed. Please try again.";
+      setError(msg.includes("Failed to fetch") 
+        ? `Network error. Check your connection or file size (${t("maxFileSize")}).` 
+        : msg);
     } finally {
       setUploading(false);
     }
@@ -81,6 +117,7 @@ export default function ImageKitUploader({
 
   const clearPreview = () => {
     setPreview("");
+    setPreviewType("image");
     onUpload("", "image");
     if (fileInputRef.current) fileInputRef.current.value = "";
   };
@@ -90,16 +127,24 @@ export default function ImageKitUploader({
       {/* Preview */}
       {preview ? (
         <div className="relative rounded-xl overflow-hidden aspect-video bg-gray-100 dark:bg-gray-800">
-          <Image
-            src={preview}
-            alt="Upload preview"
-            fill
-            className="object-cover"
-          />
+          {previewType === "video" ? (
+            <video
+              src={preview}
+              controls
+              className="w-full h-full object-contain bg-black"
+            />
+          ) : (
+            <Image
+              src={preview}
+              alt="Upload preview"
+              fill
+              className="object-cover"
+            />
+          )}
           <button
             type="button"
             onClick={clearPreview}
-            className="absolute top-2 right-2 bg-red-600 text-white rounded-full p-1.5 hover:bg-red-700 transition-colors shadow-lg"
+            className="absolute top-2 right-2 bg-red-600 text-white rounded-full p-1.5 hover:bg-red-700 transition-colors shadow-lg z-10"
           >
             <X className="w-4 h-4" />
           </button>
@@ -130,7 +175,7 @@ export default function ImageKitUploader({
                 Click to upload or drag & drop
               </p>
               <p className="text-xs text-gray-400 mt-1">
-                JPG, PNG, WebP, MP4 — Max 100MB
+                JPG, PNG, WebP, MP4 — <span className="text-red-500 font-bold">{t("maxFileSize")}</span>
               </p>
               <div className="flex gap-3 mt-3 text-gray-400">
                 <ImageIcon className="w-5 h-5" />

@@ -9,6 +9,7 @@ import { AuthProvider } from "@/lib/context/AuthContext";
 import { LanguageProvider } from "@/lib/context/LanguageContext";
 import TranslationProvider from "@/components/Providers/TranslationProvider";
 import ImageKitProvider from "@/components/Providers/ImageKitProvider";
+import { ThemeProvider } from "@/components/Providers/ThemeProvider";
 import { SITE_NAME, SITE_DESCRIPTION, SITE_URL } from "@/lib/utils/constants";
 
 const inter = Inter({
@@ -70,21 +71,28 @@ export default async function RootLayout({ children }: { children: React.ReactNo
   return (
     <html lang={lang} suppressHydrationWarning>
       <body
-        className={`${inter.variable} font-sans bg-gray-50 text-gray-900 min-h-screen antialiased`}
+        className={`${inter.variable} font-sans min-h-screen antialiased`}
       >
-        <LanguageProvider>
-          <TranslationProvider>
-            <AuthProvider>
-              <ImageKitProvider>
-                <div className="flex flex-col min-h-screen">
-                  <Navbar />
-                  <main className="flex-1">{children}</main>
-                  <Footer />
-                </div>
-              </ImageKitProvider>
-            </AuthProvider>
-          </TranslationProvider>
-        </LanguageProvider>
+        <ThemeProvider
+          attribute="class"
+          defaultTheme="system"
+          enableSystem
+          disableTransitionOnChange
+        >
+          <LanguageProvider>
+            <TranslationProvider>
+              <AuthProvider>
+                <ImageKitProvider>
+                  <div className="flex flex-col min-h-screen">
+                    <Navbar />
+                    <main className="flex-1">{children}</main>
+                    <Footer />
+                  </div>
+                </ImageKitProvider>
+              </AuthProvider>
+            </TranslationProvider>
+          </LanguageProvider>
+        </ThemeProvider>
       </body>
     </html>
   );

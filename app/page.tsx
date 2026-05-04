@@ -29,18 +29,39 @@ export default async function HomePage({ searchParams }: HomePageProps) {
   const currentPage = Math.max(1, parseInt(params.page || "1", 10));
 
   let posts: Post[] = [];
+  let totalPosts = 0;
   let error: string | null = null;
+  let is24hFilter = false;
 
   try {
-    const result = await getPostsServer(POSTS_PER_PAGE);
-    posts = result.posts;
+    const { getLatestNews24hServer, getTotalPostsCountServer } = await import("@/lib/firebase/posts-admin");
+    
+    // Always get total count for pagination
+    totalPosts = await getTotalPostsCountServer();
+
+    // 1. Try fetching news from last 24 hours first (only on page 1)
+    if (currentPage === 1) {
+      const freshPosts = await getLatestNews24hServer(12);
+      if (freshPosts.length > 0) {
+        posts = freshPosts;
+        is24hFilter = true;
+      }
+    }
+
+    // 2. Fallback or subsequent pages: standard feed
+    if (posts.length === 0) {
+      const result = await getPostsServer(POSTS_PER_PAGE, currentPage);
+      posts = result.posts;
+    }
   } catch (e) {
     console.error("Error fetching posts:", e);
     error = "खबरें लोड नहीं हो सकीं।";
   }
 
+  const totalPages = Math.ceil(totalPosts / POSTS_PER_PAGE) || 1;
+
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-[var(--background)]">
       {/* ── Hero Banner ── */}
       <section className="hero-gradient text-white relative overflow-hidden">
         {/* Decorative blobs */}
@@ -94,8 +115,8 @@ export default async function HomePage({ searchParams }: HomePageProps) {
         </div>
       </section>
 
-      {/* ── Category strip — client component for language switching ── */}
-      <div className="bg-white border-b border-gray-200 shadow-sm sticky top-[108px] z-40">
+      {/* ── Category Strip ── */}
+      <div className="bg-white dark:bg-gray-950 border-b border-gray-200 dark:border-gray-800 shadow-sm relative z-40">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <CategoryStrip />
         </div>
@@ -107,11 +128,16 @@ export default async function HomePage({ searchParams }: HomePageProps) {
           {/* Posts */}
           <div className="lg:col-span-3">
             <div className="flex items-center justify-between mb-5">
-              <h2 className="text-xl font-black text-gray-900 flex items-center gap-2.5">
+              <h2 className="text-xl font-black text-gray-900 dark:text-white flex items-center gap-2.5">
                 <span className="w-[4px] h-7 bg-red-600 rounded-full inline-block" />
                 <TranslatableText tKey="latestNews" />
+                {is24hFilter && (
+                  <span className="text-[10px] bg-red-100 text-red-600 dark:bg-red-900/30 dark:text-red-400 px-2 py-0.5 rounded-full uppercase tracking-tighter font-bold animate-pulse">
+                    Last 24h
+                  </span>
+                )}
               </h2>
-              <span className="text-xs text-gray-400 font-medium bg-gray-100 px-3 py-1 rounded-full">
+              <span className="text-xs text-gray-400 font-medium bg-gray-100 dark:bg-gray-800 px-3 py-1 rounded-full">
                 Page {currentPage}
               </span>
             </div>
@@ -127,8 +153,8 @@ export default async function HomePage({ searchParams }: HomePageProps) {
             ) : (
               <Suspense fallback={<PageSpinner />}>
                 <PostGrid posts={posts} />
-                {posts.length >= POSTS_PER_PAGE && (
-                  <Pagination currentPage={currentPage} totalPages={450} />
+                {totalPages > 1 && (
+                  <Pagination currentPage={currentPage} totalPages={totalPages} />
                 )}
               </Suspense>
             )}

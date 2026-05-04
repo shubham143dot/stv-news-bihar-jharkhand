@@ -12,6 +12,7 @@ import {
   Comment,
 } from "@/lib/firebase/comments";
 import { timeAgo } from "@/lib/utils/formatDate";
+import CommentLikeButton from "./CommentLikeButton";
 
 interface CommentSectionProps {
   postId: string;
@@ -22,6 +23,7 @@ export default function CommentSection({ postId }: CommentSectionProps) {
   const [comments, setComments] = useState<Comment[]>([]);
   const [text, setText] = useState("");
   const [submitting, setSubmitting] = useState(false);
+  const [error, setError] = useState<string | null>(null);
   const [replyTo, setReplyTo] = useState<Comment | null>(null);
   const formRef = useRef<HTMLDivElement>(null);
 
@@ -50,6 +52,7 @@ export default function CommentSection({ postId }: CommentSectionProps) {
     if (!user || !text.trim()) return;
 
     setSubmitting(true);
+    setError(null);
     try {
       await addComment(
         postId,
@@ -57,7 +60,7 @@ export default function CommentSection({ postId }: CommentSectionProps) {
         user.displayName || "Anonymous",
         user.photoURL || "",
         text.trim(),
-        replyTo?.id,
+        replyTo?.parentId || replyTo?.id, // Flatten to root comment
         isAdmin,
         replyTo?.displayName
       );
@@ -65,6 +68,7 @@ export default function CommentSection({ postId }: CommentSectionProps) {
       setReplyTo(null);
     } catch (err) {
       console.error("Comment failed:", err);
+      setError("कमेंट पोस्ट करने में विफल। कृपया पुन: प्रयास करें।");
     } finally {
       setSubmitting(false);
     }
@@ -153,6 +157,11 @@ export default function CommentSection({ postId }: CommentSectionProps) {
                   </button>
                 </div>
               </div>
+              {error && (
+                <p className="mt-2 text-xs text-red-600 font-bold px-1 animate-pulse">
+                  {error}
+                </p>
+              )}
             </form>
           </div>
         ) : (
@@ -238,14 +247,17 @@ export default function CommentSection({ postId }: CommentSectionProps) {
                 <p className="text-sm text-gray-900 dark:text-gray-100 break-words leading-relaxed font-medium">
                   {comment.comment}
                 </p>
-                {isAdmin && !comment.parentId && (
-                  <button
-                    onClick={() => handleReply(comment)}
-                    className="mt-2 text-xs font-black text-red-600 hover:text-red-700 transition-colors flex items-center gap-1 uppercase tracking-tighter"
-                  >
-                    Reply
-                  </button>
-                )}
+                  <div className="flex items-center gap-3 mt-2">
+                    <CommentLikeButton commentId={comment.id} initialLikesCount={comment.likesCount || 0} />
+                    {!comment.parentId && (
+                      <button
+                        onClick={() => handleReply(comment)}
+                        className="text-xs font-black text-red-600 hover:text-red-700 transition-colors flex items-center gap-1 uppercase tracking-tighter"
+                      >
+                        Reply
+                      </button>
+                    )}
+                  </div>
               </div>
             </div>
           ))

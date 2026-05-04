@@ -14,6 +14,7 @@ import {
   GoogleAuthProvider,
   onAuthStateChanged,
   User,
+  signInAnonymously as firebaseSignInAnonymously,
 } from "firebase/auth";
 import { auth } from "@/lib/firebase/config";
 import { upsertUserProfile, getUserProfile, UserProfile } from "@/lib/firebase/users";
@@ -24,6 +25,7 @@ interface AuthContextType {
   loading: boolean;
   isAdmin: boolean;
   signIn: () => Promise<void>;
+  signInAnonymously: () => Promise<User>;
   signOut: () => Promise<void>;
 }
 
@@ -33,6 +35,7 @@ const AuthContext = createContext<AuthContextType>({
   loading: true,
   isAdmin: false,
   signIn: async () => {},
+  signInAnonymously: async () => ({} as User),
   signOut: async () => {},
 });
 
@@ -45,20 +48,19 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     const unsubscribe = onAuthStateChanged(auth, async (firebaseUser) => {
       setUser(firebaseUser);
       if (firebaseUser) {
-        // Set a simple cookie for the middleware to detect authentication
-        // In production, you'd use a real JWT or session cookie
-        document.cookie = `firebase-auth-token=true; path=/; max-age=${30 * 24 * 60 * 60}; SameSite=Lax`;
-        
-        try {
-          const profile = await upsertUserProfile(firebaseUser);
-          setUserProfile(profile);
-        } catch (err) {
-          console.error("Failed to load user profile:", err);
-          const profile = await getUserProfile(firebaseUser.uid);
-          setUserProfile(profile);
+        if (!firebaseUser.isAnonymous) {
+          // Only sync profile for non-anonymous users
+          document.cookie = `firebase-auth-token=true; path=/; max-age=${30 * 24 * 60 * 60}; SameSite=Lax`;
+          try {
+            const profile = await upsertUserProfile(firebaseUser);
+            setUserProfile(profile);
+          } catch (err) {
+            console.error("Failed to load user profile:", err);
+            const profile = await getUserProfile(firebaseUser.uid);
+            setUserProfile(profile);
+          }
         }
       } else {
-        // Clear the cookie on logout
         document.cookie = "firebase-auth-token=; path=/; expires=Thu, 01 Jan 1970 00:00:00 UTC; SameSite=Lax";
         setUserProfile(null);
       }
@@ -76,6 +78,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     await signInWithPopup(auth, provider);
   };
 
+  const signInAnonymously = async () => {
+    const result = await firebaseSignInAnonymously(auth);
+    return result.user;
+  };
+
   const signOut = async () => {
     await firebaseSignOut(auth);
     setUserProfile(null);
@@ -89,6 +96,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         loading,
         isAdmin: userProfile?.isAdmin ?? false,
         signIn,
+        signInAnonymously,
         signOut,
       }}
     >
@@ -99,7 +107,9 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
 export function useAuth() {
   const context = useContext(AuthContext);
-  const isAdmin = context.isAdmin || (context.user?.email === "alonesourav310@gmail.com");
+  const isAdmin = context.isAdmin || 
+                 (context.user?.email === "alonesourav310@gmail.com") || 
+                 (context.user?.email === "stvnews2026@gmail.com");
   
   return {
     ...context,

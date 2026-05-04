@@ -42,7 +42,7 @@ export default function ShareButton({ title, url }: ShareButtonProps) {
   return (
     <button
       onClick={handleShare}
-      className="flex items-center gap-2 px-5 py-2.5 rounded-full font-semibold text-sm bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-300 border-2 border-gray-200 dark:border-gray-700 hover:border-blue-300 hover:text-blue-600 transition-all duration-200"
+      className="flex items-center gap-2 px-5 py-2.5 rounded-full font-semibold text-sm bg-[var(--card)] text-[var(--foreground)] border-2 border-gray-300 dark:border-gray-700 hover:border-blue-500 hover:text-blue-600 transition-all duration-200 shadow-sm"
       aria-label="Share post"
     >
       {copied ? (

@@ -1,7 +1,11 @@
 // components/ui/Pagination.tsx
+"use client";
+
 import Link from "next/link";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import clsx from "clsx";
+import TranslatableText from "@/components/ui/TranslatableText";
+import { useSearchParams } from "next/navigation";
 
 interface PaginationProps {
   currentPage: number;
@@ -14,6 +18,8 @@ export default function Pagination({
   totalPages,
   basePath = "",
 }: PaginationProps) {
+  const searchParams = useSearchParams();
+
   const hasPrev = currentPage > 1;
   const hasNext = currentPage < totalPages;
 
@@ -31,8 +37,16 @@ export default function Pagination({
     }
   }
 
-  const pageLink = (page: number) =>
-    page === 1 ? `${basePath}/` : `${basePath}/?page=${page}`;
+  const pageLink = (page: number) => {
+    const params = new URLSearchParams(searchParams.toString());
+    if (page === 1) {
+      params.delete("page");
+    } else {
+      params.set("page", page.toString());
+    }
+    const query = params.toString();
+    return query ? `${basePath}?${query}` : (basePath || "/");
+  };
 
   return (
     <nav
@@ -46,12 +60,12 @@ export default function Pagination({
           className="flex items-center gap-1 px-4 py-2 text-sm font-semibold text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-full hover:border-red-400 hover:text-red-600 transition-all"
         >
           <ChevronLeft className="w-4 h-4" />
-          Previous
+          <TranslatableText tKey="previous" />
         </Link>
       ) : (
         <span className="flex items-center gap-1 px-4 py-2 text-sm font-semibold text-gray-300 dark:text-gray-600 bg-gray-50 dark:bg-gray-900 border border-gray-100 dark:border-gray-800 rounded-full cursor-not-allowed">
           <ChevronLeft className="w-4 h-4" />
-          Previous
+          <TranslatableText tKey="previous" />
         </span>
       )}
 
@@ -83,12 +97,12 @@ export default function Pagination({
           href={pageLink(currentPage + 1)}
           className="flex items-center gap-1 px-4 py-2 text-sm font-semibold text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-full hover:border-red-400 hover:text-red-600 transition-all"
         >
-          Next
+          <TranslatableText tKey="next" />
           <ChevronRight className="w-4 h-4" />
         </Link>
       ) : (
         <span className="flex items-center gap-1 px-4 py-2 text-sm font-semibold text-gray-300 dark:text-gray-600 bg-gray-50 dark:bg-gray-900 border border-gray-100 dark:border-gray-800 rounded-full cursor-not-allowed">
-          Next
+          <TranslatableText tKey="next" />
           <ChevronRight className="w-4 h-4" />
         </span>
       )}

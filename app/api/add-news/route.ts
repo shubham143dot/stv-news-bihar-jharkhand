@@ -3,7 +3,21 @@ import { db } from "@/lib/firebase/config";
 import { collection, addDoc, Timestamp } from "firebase/firestore";
 
 export async function GET() {
-  const newsData = {
+  const generateSearchTokens = (data: any) => {
+    const tokens = new Set<string>();
+    const add = (s: string) => {
+      if (!s) return;
+      s.toLowerCase().split(/\s+/).forEach(w => {
+        const c = w.replace(/[^\w\u0900-\u097F]/g, "").trim();
+        if (c) tokens.add(c);
+      });
+    };
+    add(data.title);
+    if (data.tags) data.tags.forEach((t: string) => add(t));
+    return Array.from(tokens);
+  };
+
+  const newsData: any = {
     title: "हजारीबाग में लोकतंत्र के चौथे स्तंभ पर हमला: पत्रकारों के साथ मारपीट और दुर्व्यवहार",
     slug: "hazaribagh-journalists-attack-fir-filed-" + Date.now(),
     tags: ["बिहार", "झारखंड", "हजारीबाग", "प्रेस क्लब", "क्राइम", "STV News"],
@@ -32,6 +46,8 @@ STV न्यूज़ बिहार-झारखंड इस घटना �
     createdAt: Timestamp.now(),
     updatedAt: Timestamp.now(),
   };
+
+  newsData.searchTokens = generateSearchTokens(newsData);
 
   try {
     const docRef = await addDoc(collection(db, "posts"), newsData);

@@ -179,6 +179,7 @@ const translations: Record<Language, Record<string, string>> = {
     uploadImage: "फोटो अपलोड करें",
     selectStatePrompt: "राज्य चुनें",
     dashboardTitle: "डैशबोर्ड",
+    maxFileSize: "अधिकतम 100 MB",
   },
   en: {
     home: "Home",
@@ -349,6 +350,7 @@ const translations: Record<Language, Record<string, string>> = {
     uploadImage: "Featured image is required",
     selectStatePrompt: "Select State",
     dashboardTitle: "Dashboard",
+    maxFileSize: "Max 100 MB",
   },
 };
 
@@ -369,7 +371,11 @@ export const LanguageProvider: React.FC<{ children: React.ReactNode }> = ({ chil
 
   const setLanguage = (lang: Language) => {
     setLanguageState(lang);
-    Cookies.set("language", lang, { expires: 365 });
+    localStorage.setItem("language", lang);
+    // Set cookie for server-side rendering awareness (ISR pages read this)
+    document.cookie = `language=${lang}; path=/; max-age=31536000`;
+    // Force reload to apply language change globally and update server-aware components
+    window.location.reload();
   };
 
   const t = (key: string) => {

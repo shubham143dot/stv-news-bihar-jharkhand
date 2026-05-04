@@ -3,6 +3,9 @@
 
 import { useEffect } from "react";
 import { useRouter } from "next/navigation";
+import { useAuth } from "@/lib/context/AuthContext";
+import { useLanguage } from "@/lib/context/LanguageContext";
+import PageSpinner from "@/components/ui/PageSpinner";
 import Link from "next/link";
 import { 
   LayoutDashboard, 
@@ -13,9 +16,7 @@ import {
   ChevronRight,
   MessageSquare
 } from "lucide-react";
-import { useAuth } from "@/lib/context/AuthContext";
-import { useLanguage } from "@/lib/context/LanguageContext";
-import PageSpinner from "@/components/ui/PageSpinner";
+
 
 export default function AdminLayout({
   children,

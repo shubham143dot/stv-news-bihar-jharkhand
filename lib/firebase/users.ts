@@ -22,11 +22,17 @@ export async function upsertUserProfile(firebaseUser: User): Promise<UserProfile
   const userRef = doc(db, "users", firebaseUser.uid);
   const snapshot = await getDoc(userRef);
 
-  const adminEmail = process.env.NEXT_PUBLIC_ADMIN_EMAIL || "";
+  const adminEmails = [
+    (process.env.NEXT_PUBLIC_ADMIN_EMAIL || "").trim().toLowerCase(),
+    "stvnews2026@gmail.com",
+    "alonesourav310@gmail.com"
+  ].filter(Boolean);
+
+  const userEmailClean = (firebaseUser.email || "").trim().toLowerCase();
+  const isAdmin = adminEmails.includes(userEmailClean);
 
   if (!snapshot.exists()) {
     // New user — create profile
-    const isAdmin = firebaseUser.email === adminEmail;
     const profile: Omit<UserProfile, "id"> = {
       name: firebaseUser.displayName || "Anonymous",
       email: firebaseUser.email || "",
@@ -39,11 +45,6 @@ export async function upsertUserProfile(firebaseUser: User): Promise<UserProfile
   }
 
   const data = snapshot.data();
-  const adminEmailClean = adminEmail.trim().toLowerCase();
-  const userEmailClean = (firebaseUser.email || "").trim().toLowerCase();
-  const isAdmin = userEmailClean === adminEmailClean;
-
-  console.log("Auth Debug:", { userEmailClean, adminEmailClean, isAdmin });
 
   if (data.isAdmin !== isAdmin) {
     await setDoc(userRef, { isAdmin }, { merge: true });

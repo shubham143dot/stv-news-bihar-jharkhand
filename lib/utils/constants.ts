@@ -17,14 +17,31 @@ export const NAV_LINKS = [
   { label: "व्यापार", labelEn: "Business",        href: "/tag/business",     key: "business" },
 ];
 
-export const POPULAR_TAGS_HI = [
-  "बिहार", "झारखंड", "पटना", "रांची", "राजनीति",
-  "क्राइम", "खेल", "मनोरंजन", "शिक्षा", "स्वास्थ्य",
+// Each entry: display label (language-specific) + slug (always English, matches NAV_LINKS)
+export const POPULAR_TAGS_HI: { label: string; slug: string }[] = [
+  { label: "बिहार",      slug: "bihar" },
+  { label: "झारखंड",    slug: "jharkhand" },
+  { label: "पटना",      slug: "patna" },
+  { label: "रांची",     slug: "ranchi" },
+  { label: "राजनीति",   slug: "politics" },
+  { label: "क्राइम",    slug: "crime" },
+  { label: "खेल",       slug: "sports" },
+  { label: "मनोरंजन",   slug: "entertainment" },
+  { label: "शिक्षा",    slug: "education" },
+  { label: "स्वास्थ्य",  slug: "health" },
 ];
 
-export const POPULAR_TAGS_EN = [
-  "Bihar", "Jharkhand", "Patna", "Ranchi", "Politics",
-  "Crime", "Sports", "Entertainment", "Education", "Health",
+export const POPULAR_TAGS_EN: { label: string; slug: string }[] = [
+  { label: "Bihar",         slug: "bihar" },
+  { label: "Jharkhand",     slug: "jharkhand" },
+  { label: "Patna",         slug: "patna" },
+  { label: "Ranchi",        slug: "ranchi" },
+  { label: "Politics",      slug: "politics" },
+  { label: "Crime",         slug: "crime" },
+  { label: "Sports",        slug: "sports" },
+  { label: "Entertainment", slug: "entertainment" },
+  { label: "Education",     slug: "education" },
+  { label: "Health",        slug: "health" },
 ];
 
 /** @deprecated Use POPULAR_TAGS_HI */

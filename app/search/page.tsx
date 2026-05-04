@@ -36,17 +36,37 @@ async function SearchResults({ query }: { query: string }) {
     );
   }
 
-  let posts: Post[];
+  let posts: Post[] = [];
+  let searchError = false;
   try {
     posts = await searchPostsServer(query);
-  } catch {
-    posts = [];
+  } catch (err) {
+    console.error("[SearchPage] searchPostsServer error:", err);
+    searchError = true;
+  }
+
+  if (searchError) {
+    return (
+      <div className="text-center py-16">
+        <span className="text-5xl mb-4 block">⚠️</span>
+        <p className="text-gray-600 dark:text-gray-300 font-semibold mb-1">
+          खोज में समस्या आई
+        </p>
+        <p className="text-sm text-gray-400">
+          कृपया पुनः प्रयास करें
+        </p>
+      </div>
+    );
   }
 
   return (
     <div>
       <p className="text-sm text-gray-500 dark:text-gray-400 mb-6">
-        &quot;{query}&quot; के लिए {posts.length} परिणाम मिले
+        &quot;{query}&quot; के लिए{" "}
+        <span className="font-semibold text-gray-700 dark:text-gray-300">
+          {posts.length}
+        </span>{" "}
+        परिणाम मिले
       </p>
       <PostGrid
         posts={posts}

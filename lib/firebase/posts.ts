@@ -16,6 +16,7 @@ import {
   increment,
   DocumentSnapshot,
   runTransaction,
+  serverTimestamp,
 } from "firebase/firestore";
 import { db } from "./config";
 
@@ -48,6 +49,7 @@ export interface Post {
   viewsCount: number;
   published: boolean;
   status: PostStatus;
+  searchTokens?: string[];
 }
 
 export interface PostInput {
@@ -121,18 +123,20 @@ function docToPost(doc: DocumentSnapshot): Post {
     viewsCount: data.viewsCount || 0,
     published: status === "published",
     status,
+    searchTokens: data.searchTokens || [],
   };
 }
 
-// Fetch paginated posts (published only)
+// Fetch paginated posts
 export async function getPosts(
   lastDoc?: DocumentSnapshot,
-  pageSize = POSTS_PER_PAGE
+  pageSize = POSTS_PER_PAGE,
+  isAdminView = false
 ): Promise<{ posts: Post[]; lastDoc: DocumentSnapshot | null }> {
   // Simple query with no compound index needed
   const constraints: Parameters<typeof query>[1][] = [
     orderBy("createdAt", "desc"),
-    limit(pageSize * 2), // fetch extra to account for filtering
+    limit(isAdminView ? pageSize : pageSize * 2), // fetch extra for client-side filtering if not admin
   ];
 
   if (lastDoc) {
@@ -142,11 +146,14 @@ export async function getPosts(
   const q = query(postsRef, ...constraints);
   const snapshot = await getDocs(q);
 
-  // Filter published posts client-side (avoids composite index)
-  const posts = snapshot.docs
-    .map(docToPost)
-    .filter(p => p.status === "published" || p.published)
-    .slice(0, pageSize);
+  // Filter published posts client-side for public view
+  // Admins see everything
+  const posts = isAdminView 
+    ? snapshot.docs.map(docToPost).slice(0, pageSize)
+    : snapshot.docs
+        .map(docToPost)
+        .filter(p => p.status === "published" || p.published)
+        .slice(0, pageSize);
 
   const newLastDoc =
     snapshot.docs.length > 0
@@ -186,36 +193,64 @@ export async function getTrendingPosts(count = 5): Promise<Post[]> {
 
 // Get posts by tag
 export async function getPostsByTag(tag: string, pageSize = POSTS_PER_PAGE): Promise<Post[]> {
-  const q = query(
+  const q1 = query(
     postsRef,
     where("published", "==", true),
     where("tags", "array-contains", tag),
     orderBy("createdAt", "desc"),
     limit(pageSize)
   );
-  const snapshot = await getDocs(q);
-  return snapshot.docs.map(docToPost);
+  const q2 = query(
+    postsRef,
+    where("published", "==", true),
+    where("tagsEn", "array-contains", tag),
+    orderBy("createdAt", "desc"),
+    limit(pageSize)
+  );
+
+  const [s1, s2] = await Promise.all([getDocs(q1), getDocs(q2)]);
+  
+  const postsMap = new Map<string, Post>();
+  s1.docs.forEach(doc => {
+    const post = docToPost(doc);
+    postsMap.set(post.id, post);
+  });
+  s2.docs.forEach(doc => {
+    const post = docToPost(doc);
+    postsMap.set(post.id, post);
+  });
+
+  return Array.from(postsMap.values())
+    .sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime())
+    .slice(0, pageSize);
 }
 
-// Search posts by title prefix
+// Search posts by title prefix + fallback to client-side filter
 export async function searchPosts(searchTerm: string): Promise<Post[]> {
   const term = searchTerm.toLowerCase();
-  // Firestore range query for prefix search
+  
+  // Start with a broad query
   const q = query(
     postsRef,
     where("published", "==", true),
-    orderBy("title"),
-    where("title", ">=", searchTerm),
-    where("title", "<=", searchTerm + "\uf8ff"),
-    limit(20)
+    orderBy("createdAt", "desc"),
+    limit(100)
   );
+  
   const snapshot = await getDocs(q);
-  return snapshot.docs.map(docToPost).filter(
-    (post) =>
-      post.title.toLowerCase().includes(term) ||
-      post.tags.some((tag) => tag.toLowerCase().includes(term))
-  );
+  return snapshot.docs
+    .map(docToPost)
+    .filter(
+      (post) =>
+        post.title.toLowerCase().includes(term) ||
+        (post.titleEn?.toLowerCase().includes(term)) ||
+        (post.titleHi?.toLowerCase().includes(term)) ||
+        post.tags.some((t) => t.toLowerCase().includes(term)) ||
+        post.tagsEn?.some((t) => t.toLowerCase().includes(term)) ||
+        post.tagsHi?.some((t) => t.toLowerCase().includes(term))
+    );
 }
+
 
 // Get all slugs (for SSG)
 export async function getAllSlugs(): Promise<string[]> {
@@ -235,9 +270,33 @@ export async function getAllTags(): Promise<string[]> {
   return Array.from(tags);
 }
 
+function generateSearchTokens(input: PostInput | Partial<PostInput>): string[] {
+  const tokens = new Set<string>();
+  const addTokens = (str: string | undefined) => {
+    if (!str) return;
+    str.toLowerCase().split(/\s+/).forEach(word => {
+      const clean = word.replace(/[^\w\u0900-\u097F]/g, "").trim();
+      if (clean.length > 1) tokens.add(clean);
+      if (clean) tokens.add(clean);
+    });
+  };
+
+  addTokens(input.title);
+  addTokens(input.titleHi);
+  addTokens(input.titleEn);
+  addTokens(input.category);
+  (input.tags || []).forEach(t => addTokens(t));
+  (input.tagsEn || []).forEach(t => addTokens(t));
+  (input.tagsHi || []).forEach(t => addTokens(t));
+
+  return Array.from(tokens);
+}
+
 // Create post (admin)
 export async function createPost(input: PostInput): Promise<string> {
   const status = input.status || "published";
+  const searchTokens = generateSearchTokens(input);
+  
   const docRef = await addDoc(postsRef, stripUndefined({
     ...input,
     likesCount: 0,
@@ -245,6 +304,7 @@ export async function createPost(input: PostInput): Promise<string> {
     viewsCount: 0,
     status,
     published: status === "published",
+    searchTokens,
     createdAt: Timestamp.now(),
     updatedAt: Timestamp.now(),
   }));
@@ -257,9 +317,14 @@ export async function updatePost(
   input: Partial<PostInput>
 ): Promise<void> {
   const docRef = doc(db, "posts", id);
+  // We need current post data to regenerate full search tokens if only part of input is provided
+  // But for simplicity, we'll generate from what we have and the existing updateDoc will merge
+  const searchTokens = generateSearchTokens(input);
+
   const updates = stripUndefined({
     ...input,
     updatedAt: Timestamp.now(),
+    searchTokens,
     ...(input.status ? { published: input.status === "published" } : {}),
   });
   await updateDoc(docRef, updates as Record<string, unknown>);
@@ -281,14 +346,28 @@ export async function toggleLike(
 
   let liked = false;
   await runTransaction(db, async (transaction) => {
+    const postDoc = await transaction.get(postRef);
+    if (!postDoc.exists()) {
+      throw new Error("Post does not exist!");
+    }
+    
     const likeDoc = await transaction.get(likeRef);
     if (likeDoc.exists()) {
       transaction.delete(likeRef);
-      transaction.update(postRef, { likesCount: increment(-1) });
+      transaction.update(postRef, { 
+        likesCount: increment(-1),
+        updatedAt: serverTimestamp() 
+      });
       liked = false;
     } else {
-      transaction.set(likeRef, { userId, createdAt: Timestamp.now() });
-      transaction.update(postRef, { likesCount: increment(1) });
+      transaction.set(likeRef, { 
+        userId, 
+        createdAt: serverTimestamp() 
+      });
+      transaction.update(postRef, { 
+        likesCount: increment(1),
+        updatedAt: serverTimestamp()
+      });
       liked = true;
     }
   });
@@ -309,5 +388,8 @@ export async function getUserLike(
 // Increment view count
 export async function incrementViews(postId: string): Promise<void> {
   const postRef = doc(db, "posts", postId);
-  await updateDoc(postRef, { viewsCount: increment(1) });
+  await updateDoc(postRef, { 
+    viewsCount: increment(1),
+    updatedAt: serverTimestamp()
+  });
 }

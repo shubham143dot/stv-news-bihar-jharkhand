@@ -25,7 +25,9 @@ firebase deploy --only firestore:indexes
 
 ### 1.4 Enable Authentication
 1. Left panel → **Authentication** → **Get started**
-2. **Sign-in method** tab → **Google** → Enable → Add project support email → Save
+2. **Sign-in method** tab:
+   - **Google**: Enable → Add project support email → Save
+   - **Anonymous**: Enable → Save (Required for likes and guest comments)
 
 ### 1.5 Get Client SDK Keys
 1. Project Settings (⚙️) → **General** → **Your apps** → **Add app** → Web (`</>`)

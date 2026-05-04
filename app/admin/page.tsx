@@ -9,6 +9,7 @@ import {
   BarChart3, Newspaper, AlertTriangle, X, CheckCircle2,
 } from "lucide-react";
 import { Post, getPosts, deletePost } from "@/lib/firebase/posts";
+import { fetchDashboardStats } from "@/app/actions/stats";
 import { formatDateEn } from "@/lib/utils/formatDate";
 import Spinner from "@/components/ui/Spinner";
 import { useLanguage } from "@/lib/context/LanguageContext";
@@ -112,12 +113,24 @@ export default function AdminDashboard() {
   const [deleting, setDeleting] = useState(false);
   const [toast, setToast]       = useState({ msg: "", visible: false });
 
+  const [stats, setStats]       = useState({
+    totalPosts: 0,
+    totalLikes: 0,
+    totalViews: 0,
+    totalComments: 0,
+  });
+
   const fetchPosts = async () => {
     setLoading(true);
     try {
-      // Fetch all posts including drafts for admin
-      const { posts: fetched } = await getPosts(undefined, 100);
+      // Fetch all posts (including drafts) and global aggregation stats
+      // We use a Server Action for stats to ensure reliability and bypass client limits
+      const [{ posts: fetched }, globalStats] = await Promise.all([
+        getPosts(undefined, 100, true),
+        fetchDashboardStats()
+      ]);
       setPosts(fetched);
+      setStats(globalStats);
     } catch (err) {
       console.error("Failed to load posts:", err);
     } finally {
@@ -137,7 +150,7 @@ export default function AdminDashboard() {
     setDeleting(true);
     try {
       await deletePost(deleteTarget.id);
-      setPosts(prev => prev.filter(p => p.id !== deleteTarget.id));
+      await fetchPosts(); // Re-fetch to update both the list and the global stats
       showToast(t("postDeleted"));
     } catch (err) {
       console.error("Delete failed:", err);
@@ -148,10 +161,9 @@ export default function AdminDashboard() {
     }
   };
 
-  // Stats
-  const totalLikes    = posts.reduce((a, p) => a + p.likesCount, 0);
-  const totalViews    = posts.reduce((a, p) => a + p.viewsCount, 0);
-  const totalComments = posts.reduce((a, p) => a + p.commentsCount, 0);
+  // We now use the stats state populated by getGlobalStats() for true collection totals
+  // but keep these for quick checks if needed (though they are redundant now)
+  const { totalPosts, totalLikes, totalViews, totalComments } = stats;
 
   return (
     <>
@@ -174,7 +186,7 @@ export default function AdminDashboard() {
               <Newspaper className="w-6 h-6 text-red-600" />
               {t("postsDashboard")}
             </h1>
-              {posts.length} {t("postsCountDescription")}
+              {totalPosts} {t("postsCountDescription")}
           </div>
           <Link
             href="/admin/create"
@@ -188,7 +200,7 @@ export default function AdminDashboard() {
         {/* ── Stats ──────────────────────────────────────────────────── */}
         <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
           {[
-            { label: t("totalPosts"),   value: posts.length,    icon: <Newspaper   className="w-5 h-5 text-blue-500" />,   bg: "bg-blue-50 dark:bg-blue-900/20" },
+            { label: t("totalPosts"),   value: totalPosts,      icon: <Newspaper   className="w-5 h-5 text-blue-500" />,   bg: "bg-blue-50 dark:bg-blue-900/20" },
             { label: t("totalLikes"),   value: totalLikes,      icon: <Heart       className="w-5 h-5 text-red-500" />,    bg: "bg-red-50 dark:bg-red-900/20" },
             { label: t("totalViews"),   value: totalViews,      icon: <BarChart3   className="w-5 h-5 text-green-500" />,  bg: "bg-green-50 dark:bg-green-900/20" },
             { label: t("comments"),     value: totalComments,   icon: <MessageCircle className="w-5 h-5 text-purple-500" />, bg: "bg-purple-50 dark:bg-purple-900/20" },

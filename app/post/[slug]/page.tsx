@@ -10,10 +10,11 @@ import LikeButton from "@/components/post/LikeButton";
 import ShareButton from "@/components/post/ShareButton";
 import CommentSection from "@/components/post/CommentSection";
 import ImageDownloadButton from "@/components/post/ImageDownloadButton";
+import ViewTracker from "@/components/post/ViewTracker";
 import TranslatableText from "@/components/ui/TranslatableText";
 import { SITE_NAME, SITE_URL } from "@/lib/utils/constants";
 import { formatDate, formatDateEn } from "@/lib/utils/formatDate";
-import { getPostTitle, getPostContent, getPostTags } from "@/lib/utils/postHelpers";
+import { getPostTitle, getPostContent, getPostTags, slugifyTag } from "@/lib/utils/postHelpers";
 
 interface PostPageProps {
   params: Promise<{ slug: string }>;
@@ -25,7 +26,8 @@ export const revalidate = 60;
 export async function generateStaticParams() {
   try {
     const slugs = await getAllSlugsServer();
-    return slugs.map((slug) => ({ slug }));
+    // Pre-render top 50 posts for performance, rest on-demand
+    return slugs.slice(0, 50).map((slug) => ({ slug }));
   } catch {
     return [];
   }
@@ -119,12 +121,13 @@ export default async function PostPage({ params }: PostPageProps) {
         type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
       />
+      <ViewTracker postId={post.id} />
 
       <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         {/* Back button */}
         <Link
           href="/"
-          className="inline-flex items-center gap-2 text-sm text-gray-700 dark:text-gray-300 hover:text-red-700 dark:hover:text-red-400 mb-6 transition-colors group font-bold"
+          className="inline-flex items-center gap-2 text-sm text-gray-700 dark:text-gray-300 hover:text-red-700 dark:hover:text-red-400 mb-8 transition-colors group font-bold"
         >
           <ArrowLeft className="w-4 h-4 group-hover:-translate-x-1 transition-transform" />
           <TranslatableText tKey="allNews" />
@@ -138,7 +141,7 @@ export default async function PostPage({ params }: PostPageProps) {
                 <Badge
                   key={tag}
                   label={tag}
-                  href={`/tag/${encodeURIComponent(tag)}`}
+                  href={`/tag/${slugifyTag(tag)}`}
                   variant="red"
                 />
               ))}
@@ -217,7 +220,7 @@ export default async function PostPage({ params }: PostPageProps) {
                 }
 
                 return (
-                  <h2 key={index} className="text-xl sm:text-2xl font-black text-gray-900 border-l-4 border-red-600 pl-4 my-8 flex items-center gap-3 bg-gray-50 py-2 pr-4 rounded-r-lg">
+                  <h2 key={index} className="text-xl sm:text-2xl font-black text-gray-900 dark:text-white border-l-4 border-red-600 pl-4 my-10 flex items-center gap-3 bg-gray-100 dark:bg-gray-800 py-3 pr-4 rounded-r-lg shadow-sm border border-gray-200 dark:border-gray-700">
                     {headerText}
                   </h2>
                 );
@@ -234,7 +237,7 @@ export default async function PostPage({ params }: PostPageProps) {
                 const value = trimmed.split(':').slice(1).join(':').trim();
 
                 return (
-                  <div key={index} className="text-xs font-bold uppercase tracking-wider text-red-600 bg-red-50/50 px-3 py-1.5 rounded border border-red-100 mb-4 inline-flex items-center gap-2 mr-3">
+                  <div key={index} className="text-xs font-bold uppercase tracking-wider text-red-600 dark:text-red-400 bg-red-50/50 dark:bg-red-950/30 px-3 py-1.5 rounded border border-red-100 dark:border-red-900/50 mb-4 inline-flex items-center gap-2 mr-3">
                     <span className="w-1.5 h-1.5 rounded-full bg-red-600 animate-pulse" />
                     {label}: {value}
                   </div>
@@ -244,13 +247,13 @@ export default async function PostPage({ params }: PostPageProps) {
               // Handle list-like items (starting with - or *)
               if (trimmed.startsWith('- ') || trimmed.startsWith('* ')) {
                 return (
-                  <li key={index} className="ml-6 mb-2 list-none relative pl-6 before:content-[''] before:absolute before:left-0 before:top-3 before:w-2 before:h-2 before:bg-red-600 before:rounded-full">
+                  <li key={index} className="ml-6 mb-2 list-none relative pl-6 text-gray-900 dark:text-white before:content-[''] before:absolute before:left-0 before:top-3 before:w-2 before:h-2 before:bg-red-600 before:rounded-full">
                     {trimmed.substring(2)}
                   </li>
                 );
               }
 
-              return <p key={index} className="mb-6 text-gray-950 leading-relaxed text-xl font-medium">{trimmed}</p>;
+              return <p key={index} className="mb-6 text-gray-900 dark:text-white leading-relaxed text-lg sm:text-xl font-medium tracking-tight">{trimmed}</p>;
             })}
           </div>
 

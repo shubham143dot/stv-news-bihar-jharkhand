@@ -159,7 +159,7 @@ export default function PostForm({ post }: PostFormProps) {
   // is form ready to publish? — check the active language's required fields
   const currentTitle   = language === "hi" ? titleHi   : (titleEn   || titleHi);
   const currentContent = language === "hi" ? contentHi : (contentEn || contentHi);
-  const isReady = currentTitle.trim() && currentContent.trim() && category && imageUrl;
+  const isReady = currentTitle.trim() && currentContent.trim() && category && (imageUrl || videoUrl);
 
   // ── Toast helper ───────────────────────────────────────────────────────────
   const showToast = useCallback((message: string, type: ToastState["type"] = "success") => {
@@ -236,18 +236,24 @@ export default function PostForm({ post }: PostFormProps) {
 
   // ── Uploader callback ──────────────────────────────────────────────────────
   const handleUpload = (url: string, type: "image" | "video") => {
-    if (type === "video") setVideoUrl(url);
-    else { setImageUrl(url); setFieldErrors(e => ({ ...e, image: undefined })); }
+    if (type === "video") {
+      setVideoUrl(url);
+      setImageUrl("");
+    } else {
+      setImageUrl(url);
+      setVideoUrl("");
+    }
+    setFieldErrors(e => ({ ...e, image: undefined }));
   };
 
   // ── Validation ─────────────────────────────────────────────────────────────
   // ─── Validation ─────────────────────────────────────────────────────────────
   const validate = (): boolean => {
     const errs: FieldErrors = {};
-    if (!currentTitle.trim())   { errs.title    = t("title") + " " + (language === "hi" ? "जरूरी है" : "is required"); }
-    if (!currentContent.trim()) { errs.content  = t("content") + " " + (language === "hi" ? "जरूरी है" : "is required"); }
+    if (!currentTitle.trim())   { errs.title    = t("title") + " " + t("isRequired"); }
+    if (!currentContent.trim()) { errs.content  = t("content") + " " + t("isRequired"); }
     if (!category)       { errs.category = t("selectCategory"); }
-    if (!imageUrl)       { errs.image    = language === "hi" ? "फोटो अपलोड करें" : "Featured image is required"; }
+    if (!imageUrl && !videoUrl)  { errs.image    = t("uploadImage"); }
     if (publishMode === "scheduled" && !scheduleDate) {
       errs.scheduleDate = t("publishDate");
     }
@@ -623,7 +629,7 @@ export default function PostForm({ post }: PostFormProps) {
                 onChange={e => setState(e.target.value)}
                 className="w-full px-3 py-2.5 text-sm bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl text-gray-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-blue-500"
               >
-                <option value="">{t("selectState")}</option>
+                <option value="">{t("selectStatePrompt")}</option>
                 {[
                   ["Bihar","bihar"],
                   ["Jharkhand","jharkhand"],
@@ -774,6 +780,7 @@ export default function PostForm({ post }: PostFormProps) {
         <div ref={imageRef}>
           <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-1.5">
             {t("imageVideo")} <span className="text-red-500">*</span>
+            <span className="ml-2 text-[10px] font-bold text-red-600 bg-red-50 dark:bg-red-900/30 px-1.5 py-0.5 rounded border border-red-100 dark:border-red-900/50">Max 25 MB</span>
           </label>
           <div className={`rounded-2xl overflow-hidden border-2 transition-colors ${fieldErrors.image ? "border-red-400 dark:border-red-500" : "border-transparent"}`}>
             <ImageKitUploader onUpload={handleUpload} currentUrl={imageUrl || videoUrl} />

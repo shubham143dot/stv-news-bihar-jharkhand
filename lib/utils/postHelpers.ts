@@ -22,3 +22,8 @@ export function getPostTags(post: Post, lang: Language): string[] {
   if (lang === "en") return post.tagsEn && post.tagsEn.length ? post.tagsEn : post.tags;
   return post.tagsHi && post.tagsHi.length ? post.tagsHi : post.tags;
 }
+
+/** Slugifies a tag for URL safety, matching the backend storage pattern */
+export function slugifyTag(tag: string): string {
+  return tag.toLowerCase().trim().replace(/\s+/g, "-");
+}

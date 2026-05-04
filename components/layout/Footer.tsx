@@ -121,18 +121,20 @@ export default function Footer() {
             </h4>
             <div className="space-y-3 text-sm">
               <div className="flex items-start gap-3 text-gray-400">
-                <MapPin className="text-red-500 w-4 h-4 mt-0.5" />
-                <span>Patna, Bihar, India</span>
+                <MapPin className="text-red-500 w-4 h-4 mt-0.5 flex-shrink-0" />
+                <span>Jamshedpur, Jharkhand, India</span>
               </div>
               <div className="flex items-start gap-3 text-gray-400">
-                <Mail className="text-red-500 w-4 h-4 mt-0.5" />
-                <a href="mailto:news@stvnews.in" className="hover:text-red-400 transition-colors">
-                  news@stvnews.in
+                <Mail className="text-red-500 w-4 h-4 mt-0.5 flex-shrink-0" />
+                <a href="mailto:stvnews2026@gmail.com" className="hover:text-red-400 transition-colors truncate">
+                  stvnews2026@gmail.com
                 </a>
               </div>
               <div className="flex items-start gap-3 text-gray-400">
-                <Phone className="text-red-500 w-4 h-4 mt-0.5" />
-                <span>+91 XXXXXXXXXX</span>
+                <Phone className="text-red-500 w-4 h-4 mt-0.5 flex-shrink-0" />
+                <a href="tel:+918409036486" className="hover:text-red-400 transition-colors">
+                  +91 8409036486
+                </a>
               </div>
             </div>
 
