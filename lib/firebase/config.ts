@@ -13,8 +13,11 @@ const firebaseConfig = {
 };
 
 // Singleton pattern — prevents multiple app inits in dev hot-reload
-const app = getApps().length ? getApp() : initializeApp(firebaseConfig);
+// During build time, environment variables might be missing. We avoid crashing here.
+const app = getApps().length 
+  ? getApp() 
+  : (firebaseConfig.apiKey ? initializeApp(firebaseConfig) : null);
 
-export const auth = getAuth(app);
-export const db = getFirestore(app);
+export const auth = app ? getAuth(app) : null as any;
+export const db = app ? getFirestore(app) : null as any;
 export default app;

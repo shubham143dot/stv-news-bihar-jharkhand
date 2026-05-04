@@ -1,6 +1,8 @@
 import { NextResponse } from "next/server";
-import { db } from "@/lib/firebase/config";
-import { collection, addDoc, Timestamp } from "firebase/firestore";
+import { adminDb } from "@/lib/firebase/admin";
+import { Timestamp } from "firebase-admin/firestore";
+
+export const dynamic = "force-dynamic";
 
 export async function GET() {
   const generateSearchTokens = (data: any) => {
@@ -50,9 +52,10 @@ STV न्यूज़ बिहार-झारखंड इस घटना �
   newsData.searchTokens = generateSearchTokens(newsData);
 
   try {
-    const docRef = await addDoc(collection(db, "posts"), newsData);
+    const docRef = await adminDb.collection("posts").add(newsData);
     return NextResponse.json({ success: true, id: docRef.id, slug: newsData.slug });
   } catch (e: any) {
+    console.error("Error in add-news:", e);
     return NextResponse.json({ success: false, error: e.message }, { status: 500 });
   }
 }
