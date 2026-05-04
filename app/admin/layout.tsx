@@ -5,7 +5,7 @@ import { useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { useAuth } from "@/lib/context/AuthContext";
 import { useLanguage } from "@/lib/context/LanguageContext";
-import PageSpinner from "@/components/ui/PageSpinner";
+import { PageSpinner } from "@/components/ui/Spinner";
 import Link from "next/link";
 import { 
   LayoutDashboard, 

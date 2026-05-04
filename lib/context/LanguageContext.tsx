@@ -1,5 +1,6 @@
+"use client";
 import React, { createContext, useContext, useState, useEffect } from "react";
-import Cookies from "js-cookie";
+
 
 type Language = "en" | "hi";
 
@@ -7,6 +8,7 @@ interface LanguageContextType {
   language: Language;
   setLanguage: (lang: Language) => void;
   t: (key: string) => string;
+  mounted: boolean;
 }
 
 const translations: Record<Language, Record<string, string>> = {
@@ -358,14 +360,28 @@ const LanguageContext = createContext<LanguageContextType | undefined>(undefined
 
 export const LanguageProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [language, setLanguageState] = useState<Language>("hi");
+  const [mounted, setMounted] = useState(false);
 
   useEffect(() => {
-    const savedLang = Cookies.get("language") as Language;
+    setMounted(true);
+    // Check localStorage first
+    const savedLang = localStorage.getItem("language") as Language;
     if (savedLang && (savedLang === "en" || savedLang === "hi")) {
       setLanguageState(savedLang);
     } else {
-      // Default to Hindi
-      Cookies.set("language", "hi", { expires: 365 });
+      // Check cookies manually
+      const cookieLang = document.cookie
+        .split("; ")
+        .find((row) => row.startsWith("language="))
+        ?.split("=")[1] as Language;
+      
+      if (cookieLang && (cookieLang === "en" || cookieLang === "hi")) {
+        setLanguageState(cookieLang);
+      } else {
+        // Default to Hindi
+        localStorage.setItem("language", "hi");
+        document.cookie = "language=hi; path=/; max-age=31536000";
+      }
     }
   }, []);
 
@@ -383,7 +399,7 @@ export const LanguageProvider: React.FC<{ children: React.ReactNode }> = ({ chil
   };
 
   return (
-    <LanguageContext.Provider value={{ language, setLanguage, t }}>
+    <LanguageContext.Provider value={{ language, setLanguage, t, mounted }}>
       {children}
     </LanguageContext.Provider>
   );
