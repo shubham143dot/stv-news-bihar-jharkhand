@@ -1,57 +1,63 @@
-// lib/firebase/admin.ts
-// Server-side only — never import this in client components
+// lib/firebase/admin.ts — Server-side only
 import { initializeApp, getApps, cert, App } from "firebase-admin/app";
 import { getFirestore } from "firebase-admin/firestore";
 import { getAuth } from "firebase-admin/auth";
 
-function getAdminApp(): App {
-  if (getApps().length > 0) {
-    return getApps()[0];
+function parsePrivateKey(raw: string): string {
+  let key = raw;
+  // Strip surrounding quotes (if pasted with quotes from .env)
+  if (
+    (key.startsWith('"') && key.endsWith('"')) ||
+    (key.startsWith("'") && key.endsWith("'"))
+  ) {
+    key = key.slice(1, -1);
   }
+  // Convert escaped \n sequences to real newlines
+  key = key.replace(/\\n/g, "\n");
+  return key;
+}
+
+function getAdminApp(): App {
+  // Reuse existing app (hot-reload safe)
+  if (getApps().length > 0) return getApps()[0];
 
   const projectId =
     process.env.FIREBASE_ADMIN_PROJECT_ID ||
     process.env.NEXT_PUBLIC_FIREBASE_PROJECT_ID;
-
   const clientEmail = process.env.FIREBASE_ADMIN_CLIENT_EMAIL;
+  const rawKey = process.env.FIREBASE_ADMIN_PRIVATE_KEY;
+  const privateKey = rawKey ? parsePrivateKey(rawKey) : undefined;
 
-  // Handle private key — Vercel stores it with literal \n, not real newlines
-  let privateKey = process.env.FIREBASE_ADMIN_PRIVATE_KEY;
-  if (privateKey) {
-    // Strip surrounding quotes if present (from .env files)
-    // Use [\s\S]* instead of dotAll 's' flag for ES2017 compatibility
-    privateKey = privateKey.replace(/^["']([\s\S]*)["']$/, "$1");
-    // Convert escaped newlines to real newlines
-    privateKey = privateKey.replace(/\\n/g, "\n");
-  }
-
-  // If we have full service account credentials, use them
+  // Full service account — preferred
   if (projectId && clientEmail && privateKey) {
-    return initializeApp({
-      credential: cert({
-        projectId,
-        clientEmail,
-        privateKey,
-      }),
-    });
+    try {
+      return initializeApp({
+        credential: cert({ projectId, clientEmail, privateKey }),
+      });
+    } catch (e) {
+      console.error(
+        "[Firebase Admin] Failed to parse private key. " +
+        "Check FIREBASE_ADMIN_PRIVATE_KEY in Vercel env vars. Error:",
+        (e as Error).message
+      );
+      // Fall through to limited mode
+    }
   }
 
-  // Fallback: only project ID available (limited functionality)
+  // Limited fallback — reads may still work via project-level access
   if (projectId) {
     console.warn(
-      "[Firebase Admin] Missing FIREBASE_ADMIN_CLIENT_EMAIL or FIREBASE_ADMIN_PRIVATE_KEY. " +
-      "Running in limited mode. Set all three env vars in Vercel for full functionality."
+      "[Firebase Admin] Running without service account. " +
+      "Add FIREBASE_ADMIN_CLIENT_EMAIL and FIREBASE_ADMIN_PRIVATE_KEY in Vercel."
     );
     return initializeApp({ projectId });
   }
 
-  // Last resort: empty init (will fail on first Firestore call with a clear error)
-  console.error(
-    "[Firebase Admin] No FIREBASE_ADMIN_PROJECT_ID set. " +
-    "Please add all FIREBASE_ADMIN_* environment variables in your Vercel project settings."
-  );
-  return initializeApp({ projectId: "missing-project-id" });
+  // Last resort — prevents a hard crash; Firestore calls will fail gracefully
+  console.error("[Firebase Admin] FIREBASE_ADMIN_PROJECT_ID is not set.");
+  return initializeApp({ projectId: "not-configured" });
 }
 
-export const adminDb = getFirestore(getAdminApp());
-export const adminAuth = getAuth(getAdminApp());
+const app = getAdminApp();
+export const adminDb = getFirestore(app);
+export const adminAuth = getAuth(app);
