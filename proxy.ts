@@ -1,26 +1,21 @@
-// middleware.ts
-// Protects /admin routes — redirects unauthenticated users to home
-// Note: Full server-side session cookie auth requires Firebase Admin SDK session management.
-// This middleware uses a lightweight client cookie check.
-// For production, consider firebase-admin session cookie verification.
+// proxy.ts — Next.js 16 replacement for middleware.ts
+// Protects /admin routes — redirects unauthenticated users to home.
+// In Next.js 16, the exported function must be named "proxy" (not "middleware").
 
 import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
 
-export function middleware(request: NextRequest) {
+export function proxy(request: NextRequest) {
   const { pathname } = request.nextUrl;
 
   // Only protect /admin routes
   if (pathname.startsWith("/admin")) {
     // Check for Firebase auth cookie (set by client-side auth)
-    // The actual security enforcement is in the admin layout client component
-    // This middleware is a first line of defense / redirect hint
+    // The actual security enforcement is also in the admin layout client component.
     const authCookie =
       request.cookies.get("__session") ||
       request.cookies.get("firebase-auth-token");
 
-    // If no session cookie, redirect to home
-    // The admin layout also performs a client-side check with isAdmin
     if (!authCookie) {
       const homeUrl = new URL("/", request.url);
       homeUrl.searchParams.set("auth", "required");
