@@ -86,10 +86,9 @@ export default function PostForm({ post }: PostFormProps) {
   const router = useRouter();
 
   // form state
-  const [title,        setTitle]        = useState(post?.title    || "");
+  const [title]                 = useState(post?.title    || "");
   const [titleHi,      setTitleHi]      = useState(post?.titleHi  || post?.title || "");
   const [titleEn,      setTitleEn]      = useState(post?.titleEn  || "");
-  const [content,      setContent]      = useState(post?.content  || "");
   const [contentHi,    setContentHi]    = useState(post?.contentHi || post?.content || "");
   const [contentEn,    setContentEn]    = useState(post?.contentEn || "");
   const [tags,         setTags]         = useState<string[]>(post?.tags || []);
@@ -359,11 +358,6 @@ export default function PostForm({ post }: PostFormProps) {
   const btnColor = saved ? "bg-green-600 hover:bg-green-700" :
     publishMode === "draft" ? "bg-gray-700 hover:bg-gray-800 dark:bg-gray-600 dark:hover:bg-gray-500" :
     "bg-red-600 hover:bg-red-700";
-
-  const categoryLabel = (val: string) => {
-    const cat = CATEGORIES.find(c => c.value === val);
-    return cat ? (language === "hi" ? cat.label : cat.labelEn) : t("selectCategory");
-  };
 
   return (
     <>

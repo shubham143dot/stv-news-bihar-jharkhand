@@ -106,7 +106,7 @@ function Toast({ msg, visible }: { msg: string; visible: boolean }) {
 
 // ─── Main Dashboard ───────────────────────────────────────────────────────────
 export default function AdminDashboard() {
-  const { t, language } = useLanguage();
+  const { t } = useLanguage();
   const [posts, setPosts]       = useState<Post[]>([]);
   const [loading, setLoading]   = useState(true);
   const [deleteTarget, setDeleteTarget] = useState<Post | null>(null);
@@ -138,7 +138,10 @@ export default function AdminDashboard() {
     }
   };
 
-  useEffect(() => { fetchPosts(); }, []);
+  useEffect(() => { 
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    fetchPosts(); 
+  }, []);
 
   const showToast = (msg: string) => {
     setToast({ msg, visible: true });

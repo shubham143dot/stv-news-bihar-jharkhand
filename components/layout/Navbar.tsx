@@ -1,7 +1,7 @@
 // components/layout/Navbar.tsx
 "use client";
 
-import { useState, useRef, useEffect } from "react";
+import { useState, useEffect } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import { Menu, X, Search, User, LogOut, Settings, ChevronDown, Sun, Moon } from "lucide-react";
@@ -12,12 +12,11 @@ import { NAV_LINKS } from "@/lib/utils/constants";
 import SearchBar from "@/components/search/SearchBar";
 
 export default function Navbar() {
-  const { user, userProfile, isAdmin, signIn, signOut } = useAuth();
+  const { user, isAdmin, signIn, signOut } = useAuth();
   const { language, setLanguage, t, mounted } = useLanguage();
   const [menuOpen, setMenuOpen] = useState(false);
   const [searchOpen, setSearchOpen] = useState(false);
-  const [userMenuOpen, setUserMenuOpen] = useState(false);
-  const { theme, setTheme, resolvedTheme } = useTheme();
+  const { setTheme, resolvedTheme } = useTheme();
   const [themeMounted, setThemeMounted] = useState(false);
 
   useEffect(() => {

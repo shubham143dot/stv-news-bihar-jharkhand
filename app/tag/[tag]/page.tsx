@@ -9,16 +9,13 @@ import { getPostsByTagServer, getTotalPostsByTagCountServer } from "@/lib/fireba
 import { Post } from "@/lib/firebase/posts";
 import { SITE_NAME, POSTS_PER_PAGE } from "@/lib/utils/constants";
 
-export const revalidate = 300; // 5 minutes
-
+export const dynamic = "force-dynamic";
 interface TagPageProps {
   params: Promise<{ tag: string }>;
   searchParams: Promise<{ page?: string }>;
 }
 
-export async function generateStaticParams() {
-  return [];
-}
+
 
 export async function generateMetadata({ params }: TagPageProps): Promise<Metadata> {
   const { tag } = await params;

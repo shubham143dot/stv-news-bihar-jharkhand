@@ -7,14 +7,11 @@ import { useAuth } from "@/lib/context/AuthContext";
 import { useLanguage } from "@/lib/context/LanguageContext";
 import { PageSpinner } from "@/components/ui/Spinner";
 import Link from "next/link";
-import { 
+import {
   LayoutDashboard, 
   PlusCircle, 
-  Settings, 
   Home, 
   LogOut,
-  ChevronRight,
-  MessageSquare
 } from "lucide-react";
 
 
