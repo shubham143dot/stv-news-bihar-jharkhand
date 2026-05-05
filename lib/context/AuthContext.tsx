@@ -45,6 +45,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
+    if (!auth) return;
+
     const unsubscribe = onAuthStateChanged(auth, async (firebaseUser) => {
       setUser(firebaseUser);
       if (firebaseUser) {
@@ -71,19 +73,42 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   }, []);
 
   const signIn = async () => {
-    const provider = new GoogleAuthProvider();
-    provider.setCustomParameters({
-      prompt: "select_account",
-    });
-    await signInWithPopup(auth, provider);
+    if (!auth) {
+      alert("Firebase is not initialized. Check your API Key in environment variables.");
+      return;
+    }
+
+    try {
+      const provider = new GoogleAuthProvider();
+      provider.setCustomParameters({
+        prompt: "select_account",
+      });
+      
+      // Try popup first
+      await signInWithPopup(auth, provider);
+    } catch (err: any) {
+      console.error("Sign in failed:", err);
+      
+      if (err.code === "auth/unauthorized-domain") {
+        alert("This domain is not authorized for Google Sign-in. Please add it to your Firebase Console under Authentication > Settings > Authorized Domains.");
+      } else if (err.code === "auth/popup-blocked") {
+        alert("Sign-in popup was blocked by your browser. Please allow popups for this site or try again.");
+      } else if (err.code === "auth/popup-closed-by-user") {
+        // User closed the popup, no action needed
+      } else {
+        alert(`Sign in failed: ${err.code || err.message}`);
+      }
+    }
   };
 
   const signInAnonymously = async () => {
+    if (!auth) throw new Error("Firebase not initialized");
     const result = await firebaseSignInAnonymously(auth);
     return result.user;
   };
 
   const signOut = async () => {
+    if (!auth) return;
     await firebaseSignOut(auth);
     setUserProfile(null);
   };

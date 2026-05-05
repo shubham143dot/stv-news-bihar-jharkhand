@@ -98,16 +98,16 @@ export default async function HomePage({ searchParams }: HomePageProps) {
             </div>
 
             {/* Right: REAL logo — Rounded and premium */}
-            <div className="hidden lg:flex justify-center items-center">
-              <div className="relative w-[240px] h-[240px] rounded-full overflow-hidden ring-[8px] ring-yellow-400 shadow-[0_20px_50px_rgba(0,0,0,0.3)] logo-glow">
+            <div className="flex justify-center items-center mt-10 lg:mt-0">
+              <div className="relative w-[180px] h-[180px] lg:w-[280px] lg:h-[280px] rounded-full overflow-hidden ring-[4px] lg:ring-[6px] ring-yellow-400/50 shadow-[0_15px_40px_rgba(0,0,0,0.3)] lg:shadow-[0_20px_50px_rgba(0,0,0,0.3)] logo-glow">
                 <Image
                   src="/logo.jpg"
                   alt="STV News Bihar Jharkhand — Aap Ko Rakhe Aage"
                   fill
                   className="object-cover"
-                  style={{ objectPosition: "50% 45%" }}
+                  style={{ objectPosition: "center" }}
                   priority
-                  sizes="240px"
+                  sizes="(max-width: 1024px) 180px, 280px"
                 />
               </div>
             </div>

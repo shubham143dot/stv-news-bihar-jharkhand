@@ -52,7 +52,7 @@ export default function Navbar() {
                   alt="STV News Bihar Jharkhand"
                   fill
                   className="object-cover"
-                  style={{ objectPosition: "50% 45%" }}
+                  style={{ objectPosition: "center" }}
                   priority
                   sizes="62px"
                 />

@@ -81,7 +81,9 @@ service cloud.firestore {
     match /users/{userId} {
       allow read: if isAuthenticated() && (isOwner(userId) || isAdmin());
       allow create: if isAuthenticated() && isOwner(userId);
-      allow update: if isAdmin() || (isAuthenticated() && isOwner(userId) && !request.resource.data.diff(resource.data).affectedKeys().hasAny(['isAdmin']));
+      allow update: if isAdmin() || 
+                    (isAuthenticated() && isOwner(userId) && 
+                     (!request.resource.data.diff(resource.data).affectedKeys().hasAny(['isAdmin']) || isAdmin()));
       allow delete: if isAdmin();
     }
   }

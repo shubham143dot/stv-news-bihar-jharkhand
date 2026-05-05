@@ -13,7 +13,10 @@ const firebaseConfig = {
 };
 
 // Singleton pattern — prevents multiple app inits in dev hot-reload
-// During build time, environment variables might be missing. We avoid crashing here.
+if (typeof window !== "undefined" && !firebaseConfig.apiKey) {
+  console.warn("Firebase API Key is missing. Check your environment variables (NEXT_PUBLIC_FIREBASE_API_KEY).");
+}
+
 const app = getApps().length 
   ? getApp() 
   : (firebaseConfig.apiKey ? initializeApp(firebaseConfig) : null);
