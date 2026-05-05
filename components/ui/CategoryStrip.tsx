@@ -7,7 +7,7 @@ import { NAV_LINKS } from "@/lib/utils/constants";
 import { useLanguage } from "@/lib/context/LanguageContext";
 
 export default function CategoryStrip() {
-  const { language, mounted, t } = useLanguage();
+  const { mounted, t } = useLanguage();
   const pathname = usePathname();
 
   return (

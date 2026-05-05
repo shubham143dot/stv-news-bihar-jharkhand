@@ -42,7 +42,7 @@ export async function getGlobalStatsAdmin(): Promise<{
         totalViews: postsAggregate.data().views || 0,
         totalComments: commentsCount.data().count,
       };
-    } catch (aggError) {
+    } catch (_aggError) {
       // Aggregate query requires a composite index — falls back to manual summation.
       // Create the index at: https://console.firebase.google.com/project/stv-news-bihar/firestore/indexes
       console.debug("Aggregation using manual fallback (composite index not created yet).");
@@ -428,7 +428,7 @@ export async function getTotalPostsByTagCountServer(tag: string): Promise<number
       .get();
     
     return snapshot.data().count;
-  } catch (error) {
+  } catch (_error) {
     // Fallback if index missing
     const snapshot = await adminDb
       .collection(POSTS_COLLECTION)

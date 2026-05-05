@@ -15,7 +15,7 @@ interface LikeButtonProps {
 }
 
 export default function LikeButton({ postId, initialLikesCount }: LikeButtonProps) {
-  const { user, signIn, signInAnonymously } = useAuth();
+  const { user, signInAnonymously } = useAuth();
   const { t } = useLanguage();
   const [liked, setLiked] = useState(false);
   const [likesCount, setLikesCount] = useState(initialLikesCount);
@@ -28,6 +28,7 @@ export default function LikeButton({ postId, initialLikesCount }: LikeButtonProp
         .then(setLiked)
         .catch(err => console.error("Error fetching like status:", err));
     } else {
+      // eslint-disable-next-line react-hooks/set-state-in-effect
       setLiked(false);
     }
   }, [user, postId]);

@@ -24,6 +24,7 @@ export default function CommentLikeButton({ commentId, initialLikesCount }: Comm
         .then(setLiked)
         .catch(err => console.error("Error fetching comment like status:", err));
     } else {
+      // eslint-disable-next-line react-hooks/set-state-in-effect
       setLiked(false);
     }
   }, [user, commentId]);

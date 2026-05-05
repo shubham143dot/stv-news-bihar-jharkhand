@@ -18,12 +18,11 @@ export default function Navbar() {
   const [searchOpen, setSearchOpen] = useState(false);
   const [userMenuOpen, setUserMenuOpen] = useState(false);
   const { theme, setTheme, resolvedTheme } = useTheme();
-  const themeMountedRef = useRef(false);
-  const [, setForceRender] = useState(0);
+  const [themeMounted, setThemeMounted] = useState(false);
 
   useEffect(() => {
-    themeMountedRef.current = true;
-    setForceRender(n => n + 1); // trigger one re-render after mount
+    // eslint-disable-next-line react-hooks/set-state-in-effect
+    setThemeMounted(true);
   }, []);
 
   return (
@@ -92,7 +91,7 @@ export default function Navbar() {
                 className="p-2 rounded-full hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors bg-white dark:bg-gray-900 border-2 border-gray-400 dark:border-gray-700 shadow-md active:scale-95"
                 aria-label="Toggle theme"
               >
-                {themeMountedRef.current ? (
+                {themeMounted ? (
                   resolvedTheme === "dark" ? (
                     <Sun className="w-5 h-5 text-yellow-500" />
                   ) : (

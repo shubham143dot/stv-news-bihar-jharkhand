@@ -6,7 +6,6 @@ import {
   doc,
   query,
   where,
-  orderBy,
   onSnapshot,
   Timestamp,
   increment,
