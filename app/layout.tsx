@@ -11,6 +11,7 @@ import TranslationProvider from "@/components/Providers/TranslationProvider";
 import ImageKitProvider from "@/components/Providers/ImageKitProvider";
 import { ThemeProvider } from "@/components/Providers/ThemeProvider";
 import { SITE_NAME, SITE_DESCRIPTION, SITE_URL } from "@/lib/utils/constants";
+import { Analytics } from "@vercel/analytics/next";
 
 const inter = Inter({
   subsets: ["latin"],
@@ -93,6 +94,7 @@ export default async function RootLayout({ children }: { children: React.ReactNo
             </TranslationProvider>
           </LanguageProvider>
         </ThemeProvider>
+        <Analytics />
       </body>
     </html>
   );
