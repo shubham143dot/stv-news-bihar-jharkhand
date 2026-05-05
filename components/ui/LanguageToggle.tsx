@@ -1,7 +1,7 @@
 "use client";
 
 import { useLanguage } from "@/lib/context/LanguageContext";
-import { Globe } from "lucide-react";
+
 
 export default function LanguageToggle() {
   const { language, setLanguage } = useLanguage();

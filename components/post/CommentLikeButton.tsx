@@ -13,7 +13,7 @@ interface CommentLikeButtonProps {
 }
 
 export default function CommentLikeButton({ commentId, initialLikesCount }: CommentLikeButtonProps) {
-  const { user, signIn, signInAnonymously } = useAuth();
+  const { user, signInAnonymously } = useAuth();
   const [liked, setLiked] = useState(false);
   const [likesCount, setLikesCount] = useState(initialLikesCount);
   const [loading, setLoading] = useState(false);

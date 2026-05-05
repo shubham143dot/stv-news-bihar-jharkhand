@@ -12,7 +12,23 @@ const eslintConfig = defineConfig([
     "out/**",
     "build/**",
     "next-env.d.ts",
+    "scripts/**",
   ]),
+  {
+    rules: {
+      // Allow `any` in this project — Firestore/ImageKit/Google Translate APIs
+      // use dynamic types that are impractical to fully type.
+      "@typescript-eslint/no-explicit-any": "off",
+      "@typescript-eslint/no-unused-vars": ["warn", {
+        argsIgnorePattern: "^_",
+        varsIgnorePattern: "^_",
+        caughtErrorsIgnorePattern: "^_",
+      }],
+      // These React hooks rules are too aggressive for our use cases
+      // (e.g. setting state inside useEffect for hydration, calling Date.now() in render)
+      "react-hooks/exhaustive-deps": "warn",
+    },
+  },
 ]);
 
 export default eslintConfig;

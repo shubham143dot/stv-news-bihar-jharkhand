@@ -5,7 +5,7 @@
 import { NextResponse } from "next/server";
 import type { NextRequest } from "next/server";
 
-export function proxy(request: NextRequest) {
+export function proxy(_request: NextRequest) {
   // No server-side auth redirect here — the admin layout handles it
   // to avoid race conditions with Firebase client-side cookie setting.
   return NextResponse.next();

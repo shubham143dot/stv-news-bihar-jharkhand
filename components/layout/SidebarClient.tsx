@@ -8,7 +8,7 @@ import { Post } from "@/lib/firebase/posts";
 import { useLanguage } from "@/lib/context/LanguageContext";
 import { POPULAR_TAGS_HI, POPULAR_TAGS_EN } from "@/lib/utils/constants";
 import { getPostTitle } from "@/lib/utils/postHelpers";
-import { timeAgo } from "@/lib/utils/formatDate";
+
 
 interface SidebarClientProps {
   trendingPosts: Post[];

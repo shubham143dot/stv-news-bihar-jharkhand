@@ -9,7 +9,7 @@ import { timeAgo } from "@/lib/utils/formatDate";
 import { getPostTitle, getPostTags, slugifyTag } from "@/lib/utils/postHelpers";
 import { useLanguage } from "@/lib/context/LanguageContext";
 import Badge from "@/components/ui/Badge";
-import { useState, useRef } from "react";
+import { useState, useRef, useMemo } from "react";
 
 interface PostCardProps {
   post: Post;
@@ -25,7 +25,8 @@ export default function PostCard({ post, priority = false, featured = false }: P
   const title = getPostTitle(post, language);
   const tags  = getPostTags(post, language);
 
-  const isLive = new Date(post.createdAt).getTime() > Date.now() - 7200000;
+  // useMemo avoids calling Date.now() during every render (react-hooks/purity)
+  const isLive = useMemo(() => new Date(post.createdAt).getTime() > Date.now() - 7200000, [post.createdAt]);
 
   const toggleMute = (e: React.MouseEvent) => {
     e.preventDefault();

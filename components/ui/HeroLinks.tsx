@@ -6,7 +6,7 @@ import { NAV_LINKS } from "@/lib/utils/constants";
 import { useLanguage } from "@/lib/context/LanguageContext";
 
 export default function HeroLinks() {
-  const { language, mounted, t } = useLanguage();
+  const { mounted, t } = useLanguage();
 
   return (
     <div className="flex flex-wrap gap-2">

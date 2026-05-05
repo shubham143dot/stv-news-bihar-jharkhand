@@ -352,18 +352,21 @@ const translations: Record<Language, Record<string, string>> = {
 };
 
 export const LanguageProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
-  const [language, setLanguageState] = useState<Language>("hi");
+  const [language, setLanguageState] = useState<Language>(() => {
+    // Lazy initializer — runs once during first render, not in an effect
+    if (typeof window !== "undefined") {
+      try {
+        const savedLang = localStorage.getItem("language") as Language;
+        if (savedLang === "hi" || savedLang === "en") return savedLang;
+      } catch {
+        // localStorage may not be available
+      }
+    }
+    return "hi";
+  });
   const [mounted, setMounted] = useState(false);
 
   useEffect(() => {
-    try {
-      const savedLang = localStorage.getItem("language") as Language;
-      if (savedLang === "hi" || savedLang === "en") {
-        setLanguageState(savedLang);
-      }
-    } catch {
-      // localStorage may not be available in SSR
-    }
     setMounted(true);
   }, []);
 

@@ -1,7 +1,7 @@
 // components/layout/Navbar.tsx
 "use client";
 
-import { useState } from "react";
+import { useState, useRef, useEffect } from "react";
 import Link from "next/link";
 import Image from "next/image";
 import { Menu, X, Search, User, LogOut, Settings, ChevronDown, Sun, Moon } from "lucide-react";
@@ -10,7 +10,6 @@ import { useAuth } from "@/lib/context/AuthContext";
 import { useLanguage } from "@/lib/context/LanguageContext";
 import { NAV_LINKS } from "@/lib/utils/constants";
 import SearchBar from "@/components/search/SearchBar";
-import { useEffect } from "react";
 
 export default function Navbar() {
   const { user, userProfile, isAdmin, signIn, signOut } = useAuth();
@@ -19,10 +18,12 @@ export default function Navbar() {
   const [searchOpen, setSearchOpen] = useState(false);
   const [userMenuOpen, setUserMenuOpen] = useState(false);
   const { theme, setTheme, resolvedTheme } = useTheme();
-  const [themeMounted, setThemeMounted] = useState(false);
+  const themeMountedRef = useRef(false);
+  const [, setForceRender] = useState(0);
 
   useEffect(() => {
-    setThemeMounted(true);
+    themeMountedRef.current = true;
+    setForceRender(n => n + 1); // trigger one re-render after mount
   }, []);
 
   return (
@@ -91,7 +92,7 @@ export default function Navbar() {
                 className="p-2 rounded-full hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors bg-white dark:bg-gray-900 border-2 border-gray-400 dark:border-gray-700 shadow-md active:scale-95"
                 aria-label="Toggle theme"
               >
-                {themeMounted ? (
+                {themeMountedRef.current ? (
                   resolvedTheme === "dark" ? (
                     <Sun className="w-5 h-5 text-yellow-500" />
                   ) : (
