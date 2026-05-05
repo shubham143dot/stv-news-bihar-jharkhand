@@ -5,6 +5,7 @@ import { useRef, useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { Search, X } from "lucide-react";
 import { useSearch } from "@/lib/hooks/useSearch";
+import { useLanguage } from "@/lib/context/LanguageContext";
 import clsx from "clsx";
 
 interface SearchBarProps {
@@ -19,6 +20,7 @@ export default function SearchBar({
   className,
 }: SearchBarProps) {
   const { query, setQuery, clearSearch } = useSearch();
+  const { t } = useLanguage();
   const [isNavigating, setIsNavigating] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
   const router = useRouter();
@@ -64,7 +66,7 @@ export default function SearchBar({
               handleSubmit(e as unknown as React.FormEvent);
             }
           }}
-          placeholder="खबर खोजें..."
+          placeholder={t("searchPlaceholder")}
           className="w-full pl-10 pr-10 py-2.5 bg-gray-100 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-full text-sm text-gray-900 dark:text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-red-500 focus:border-transparent transition-all"
           autoComplete="off"
           autoCorrect="off"
@@ -89,7 +91,7 @@ export default function SearchBar({
         {isNavigating ? (
           <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
         ) : (
-          "खोजें"
+          t('searchBtn')
         )}
       </button>
     </form>

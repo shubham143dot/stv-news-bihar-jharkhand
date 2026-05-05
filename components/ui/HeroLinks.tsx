@@ -6,12 +6,12 @@ import { NAV_LINKS } from "@/lib/utils/constants";
 import { useLanguage } from "@/lib/context/LanguageContext";
 
 export default function HeroLinks() {
-  const { language, mounted } = useLanguage();
+  const { language, mounted, t } = useLanguage();
 
   return (
     <div className="flex flex-wrap gap-2">
       {NAV_LINKS.slice(1, 7).map((link) => {
-        const label = mounted && language === "en" ? (link.labelEn ?? link.label) : link.label;
+        const label = mounted ? t(link.key) : link.label;
         return (
           <Link
             key={link.href}

@@ -7,13 +7,13 @@ import { NAV_LINKS } from "@/lib/utils/constants";
 import { useLanguage } from "@/lib/context/LanguageContext";
 
 export default function CategoryStrip() {
-  const { language, mounted } = useLanguage();
+  const { language, mounted, t } = useLanguage();
   const pathname = usePathname();
 
   return (
     <div className="flex items-center gap-2 overflow-x-auto py-3 scrollbar-hide">
       {NAV_LINKS.map((link) => {
-        const label = mounted && language === "en" ? (link.labelEn ?? link.label) : link.label;
+        const label = mounted ? t(link.key) : link.label;
         const isActive = pathname === link.href;
         
         return (

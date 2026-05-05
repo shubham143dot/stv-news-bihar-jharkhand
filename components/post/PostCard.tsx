@@ -18,7 +18,7 @@ interface PostCardProps {
 }
 
 export default function PostCard({ post, priority = false, featured = false }: PostCardProps) {
-  const { language } = useLanguage();
+  const { language, t } = useLanguage();
   const [isMuted, setIsMuted] = useState(true);
   const videoRef = useRef<HTMLVideoElement>(null);
 
@@ -74,7 +74,7 @@ export default function PostCard({ post, priority = false, featured = false }: P
             <button
               onClick={toggleMute}
               className="absolute bottom-4 right-4 z-30 p-2 bg-black/50 hover:bg-black/70 text-white rounded-full transition-all"
-              title={isMuted ? "Unmute" : "Mute"}
+              title={isMuted ? t("unmute") : t("mute")}
             >
               {isMuted ? <VolumeX size={18} /> : <Volume2 size={18} />}
             </button>
@@ -82,7 +82,7 @@ export default function PostCard({ post, priority = false, featured = false }: P
           
           {isLive && (
             <span className="absolute top-3 left-3 z-20 bg-red-600 text-white text-xs font-black px-3 py-1 rounded-full flex items-center gap-1.5 pointer-events-none">
-              <span className="w-2 h-2 rounded-full bg-white animate-pulse" /> LIVE
+              <span className="w-2 h-2 rounded-full bg-white animate-pulse" /> {t("live")}
             </span>
           )}
           
@@ -150,7 +150,7 @@ export default function PostCard({ post, priority = false, featured = false }: P
           <button
             onClick={toggleMute}
             className="absolute bottom-2 right-2 z-30 p-1.5 bg-black/50 hover:bg-black/70 text-white rounded-full transition-all opacity-0 group-hover:opacity-100"
-            title={isMuted ? "Unmute" : "Mute"}
+            title={isMuted ? t("unmute") : t("mute")}
           >
             {isMuted ? <VolumeX size={14} /> : <Volume2 size={14} />}
           </button>
@@ -160,7 +160,7 @@ export default function PostCard({ post, priority = false, featured = false }: P
 
         {isLive && (
           <span className="absolute top-2 left-2 z-20 bg-red-600 text-white text-[10px] font-black px-2.5 py-1 rounded-full flex items-center gap-1">
-            <span className="w-1.5 h-1.5 rounded-full bg-white animate-pulse" /> LIVE
+            <span className="w-1.5 h-1.5 rounded-full bg-white animate-pulse" /> {t("live")}
           </span>
         )}
       </div>

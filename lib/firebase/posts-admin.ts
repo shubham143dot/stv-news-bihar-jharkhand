@@ -43,7 +43,9 @@ export async function getGlobalStatsAdmin(): Promise<{
         totalComments: commentsCount.data().count,
       };
     } catch (aggError) {
-      console.warn("Aggregation failed, falling back to manual count:", aggError);
+      // Aggregate query requires a composite index — falls back to manual summation.
+      // Create the index at: https://console.firebase.google.com/project/stv-news-bihar/firestore/indexes
+      console.debug("Aggregation using manual fallback (composite index not created yet).");
       
       // Secondary Strategy: Manual summation (Safe fallback for small/medium collections)
       const allPosts = await postsRef.get();

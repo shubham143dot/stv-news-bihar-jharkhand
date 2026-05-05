@@ -12,6 +12,7 @@ import {
   Comment,
 } from "@/lib/firebase/comments";
 import { timeAgo } from "@/lib/utils/formatDate";
+import { useLanguage } from "@/lib/context/LanguageContext";
 import CommentLikeButton from "./CommentLikeButton";
 
 interface CommentSectionProps {
@@ -20,6 +21,7 @@ interface CommentSectionProps {
 
 export default function CommentSection({ postId }: CommentSectionProps) {
   const { user, isAdmin, signIn } = useAuth();
+  const { t } = useLanguage();
   const [comments, setComments] = useState<Comment[]>([]);
   const [text, setText] = useState("");
   const [submitting, setSubmitting] = useState(false);
@@ -68,14 +70,14 @@ export default function CommentSection({ postId }: CommentSectionProps) {
       setReplyTo(null);
     } catch (err) {
       console.error("Comment failed:", err);
-      setError("कमेंट पोस्ट करने में विफल। कृपया पुन: प्रयास करें।");
+      setError(t("commentPostFailed") || "कमेंट पोस्ट करने में विफल।");
     } finally {
       setSubmitting(false);
     }
   };
 
   const handleDelete = async (commentId: string) => {
-    if (!confirm("इस कमेंट को डिलीट करें?")) return;
+    if (!confirm(t("deleteCommentConfirm"))) return;
     try {
       await deleteComment(commentId, postId);
     } catch (err) {
@@ -93,7 +95,7 @@ export default function CommentSection({ postId }: CommentSectionProps) {
       <div className="flex items-center gap-2 mb-6">
         <MessageCircle className="w-5 h-5 text-red-600" />
         <h3 className="text-xl font-bold text-gray-900 dark:text-white">
-          Comments ({comments.length})
+          {t("comments")} ({comments.length})
         </h3>
       </div>
 
@@ -106,14 +108,14 @@ export default function CommentSection({ postId }: CommentSectionProps) {
                 <div className="flex items-center gap-2">
                   <div className="w-1 h-4 bg-red-600 rounded-full" />
                   <span className="text-xs font-bold text-red-600">
-                    Replying to {replyTo.displayName}
+                    {t("replyingTo")} {replyTo.displayName}
                   </span>
                 </div>
                 <button 
                   onClick={() => setReplyTo(null)}
                   className="text-xs text-gray-400 hover:text-red-600 font-bold p-1"
                 >
-                  Cancel
+                  {t("cancel")}
                 </button>
               </div>
             )}
@@ -138,7 +140,7 @@ export default function CommentSection({ postId }: CommentSectionProps) {
                   <textarea
                     value={text}
                     onChange={(e) => setText(e.target.value)}
-                    placeholder={replyTo ? "अपना जवाब लिखें..." : "अपना कमेंट लिखें..."}
+                    placeholder={replyTo ? t("writeReply") : t("writeComment")}
                     rows={2}
                     maxLength={500}
                     className="flex-1 px-4 py-2.5 bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl text-sm text-gray-900 dark:text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-red-500 transition-all resize-none"
@@ -167,13 +169,13 @@ export default function CommentSection({ postId }: CommentSectionProps) {
         ) : (
           <div className="p-6 bg-gray-50 dark:bg-gray-800/50 rounded-2xl border border-gray-200 dark:border-gray-700 text-center backdrop-blur-sm">
             <p className="text-sm text-gray-800 dark:text-gray-300 mb-4 font-bold">
-              कमेंट करने के लिए लॉगिन करें
+              {t("loginToComment")}
             </p>
             <button
               onClick={signIn}
               className="px-8 py-2.5 bg-red-600 hover:bg-red-700 text-white text-sm font-bold rounded-full transition-all shadow-lg hover:shadow-red-600/20 active:scale-95"
             >
-              Google से Login करें
+              {t("loginWithGoogle")}
             </button>
           </div>
         )}
@@ -184,7 +186,7 @@ export default function CommentSection({ postId }: CommentSectionProps) {
         {threadedComments.length === 0 ? (
           <div className="text-center py-12 bg-gray-50/50 dark:bg-gray-800/30 rounded-2xl border border-dashed border-gray-200 dark:border-gray-700">
             <MessageCircle className="w-12 h-12 mx-auto mb-3 text-gray-300 dark:text-gray-600" />
-            <p className="text-sm text-gray-500 font-medium font-hindi">पहले कमेंट करने वाले बनें!</p>
+            <p className="text-sm text-gray-500 font-medium font-hindi">{t("beFirstComment")}</p>
           </div>
         ) : (
           threadedComments.map((comment) => (
@@ -220,12 +222,12 @@ export default function CommentSection({ postId }: CommentSectionProps) {
                     {comment.isAdmin && (
                       <span className="text-[10px] font-black uppercase tracking-wider bg-red-600 text-white px-2 py-0.5 rounded shadow-sm flex items-center gap-1">
                         <div className="w-1 h-1 bg-white rounded-full animate-pulse" />
-                        Publisher
+                        {t("publisher")}
                       </span>
                     )}
                     {comment.replyToName && (
                       <span className="text-[11px] text-gray-400 font-medium">
-                        replied to <span className="text-red-600 font-bold">@{comment.replyToName}</span>
+                        {t("repliedTo")} <span className="text-red-600 font-bold">@{comment.replyToName}</span>
                       </span>
                     )}
                   </div>
@@ -254,7 +256,7 @@ export default function CommentSection({ postId }: CommentSectionProps) {
                         onClick={() => handleReply(comment)}
                         className="text-xs font-black text-red-600 hover:text-red-700 transition-colors flex items-center gap-1 uppercase tracking-tighter"
                       >
-                        Reply
+                        {t("reply")}
                       </button>
                     )}
                   </div>

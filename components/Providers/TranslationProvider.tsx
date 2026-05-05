@@ -29,38 +29,43 @@ export default function TranslationProvider({ children }: { children: React.Reac
 
     // 2. Trigger translation when language state changes OR path changes
     const triggerTranslate = () => {
-      // If language is Hindi, try to clear translation (revert to original)
-      if (language === 'hi') {
+      try {
         const combo = document.querySelector(".goog-te-combo") as HTMLSelectElement;
-        if (combo && combo.value !== 'hi') {
-          combo.value = 'hi';
-          combo.dispatchEvent(new Event("change"));
+        
+        if (language === 'hi') {
+          if (combo && combo.value !== 'hi') {
+            combo.value = 'hi';
+            combo.dispatchEvent(new Event("change"));
+          }
+          // Clear cookies to ensure revert
+          document.cookie = "googtrans=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;";
+          document.cookie = "googtrans=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/; domain=" + window.location.hostname;
+          return;
         }
-        document.cookie = "googtrans=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/;";
-        document.cookie = "googtrans=; expires=Thu, 01 Jan 1970 00:00:00 UTC; path=/; domain=" + window.location.hostname;
-        return;
-      }
 
-      const combo = document.querySelector(".goog-te-combo") as HTMLSelectElement;
-      if (combo) {
-        combo.value = language;
-        combo.dispatchEvent(new Event("change"));
-      } else {
-        // Fallback: Use cookie if widget not ready
-        document.cookie = `googtrans=/hi/${language}; path=/`;
+        if (combo) {
+          if (combo.value !== language) {
+            combo.value = language;
+            combo.dispatchEvent(new Event("change"));
+          }
+        } else {
+          // Fallback: Use cookie if widget not ready
+          document.cookie = `googtrans=/hi/${language}; path=/`;
+        }
+      } catch (err) {
+        console.warn("Translation trigger failed:", err);
       }
     };
 
-    // Wait a bit for the widget to be ready and DOM to be stable
-    // We try a few times in case the widget is slow
-    triggerTranslate();
-    const timer = setTimeout(triggerTranslate, 1000);
-    const timer2 = setTimeout(triggerTranslate, 3000);
+    // Use multiple timers to ensure the widget is ready
+    const timers = [
+      setTimeout(triggerTranslate, 500),
+      setTimeout(triggerTranslate, 1500),
+      setTimeout(triggerTranslate, 3000),
+      setTimeout(triggerTranslate, 5000)
+    ];
     
-    return () => {
-      clearTimeout(timer);
-      clearTimeout(timer2);
-    };
+    return () => timers.forEach(clearTimeout);
   }, [language, pathname]);
 
   return (
