@@ -524,12 +524,25 @@ export async function searchPostsServer(searchTerm: string): Promise<Post[]> {
     .slice(0, 40);
 }
 
-/** Fetch all published slugs — for SSG/ISR. */
-export async function getAllSlugsServer(): Promise<string[]> {
+/** Fetch all published slugs and their update times — for Sitemap. */
+export async function getAllPostsSitemapDataServer(): Promise<{ slug: string; updatedAt: string }[]> {
   const snapshot = await adminDb
     .collection(POSTS_COLLECTION)
     .where("published", "==", true)
+    .select("slug", "updatedAt")
     .get();
 
-  return snapshot.docs.map((d) => d.data().slug as string).filter(Boolean);
+  return snapshot.docs.map((d) => {
+    const data = d.data();
+    let updatedAt = new Date().toISOString();
+    if (data.updatedAt instanceof Timestamp) {
+      updatedAt = data.updatedAt.toDate().toISOString();
+    } else if (typeof data.updatedAt === "string") {
+      updatedAt = data.updatedAt;
+    }
+    return {
+      slug: data.slug as string,
+      updatedAt,
+    };
+  }).filter((p) => p.slug);
 }
