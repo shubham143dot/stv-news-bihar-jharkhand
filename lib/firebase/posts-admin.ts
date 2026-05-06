@@ -546,3 +546,20 @@ export async function getAllPostsSitemapDataServer(): Promise<{ slug: string; up
     };
   }).filter((p) => p.slug);
 }
+
+/** Fetch all published slugs — for Static Params. */
+export async function getAllSlugsServer(): Promise<string[]> {
+  try {
+    const snapshot = await adminDb
+      .collection(POSTS_COLLECTION)
+      .where("published", "==", true)
+      .select("slug")
+      .get();
+
+    return snapshot.docs.map((d) => d.data().slug as string).filter(Boolean);
+  } catch (error) {
+    console.error("Error fetching all slugs:", error);
+    return [];
+  }
+}
+

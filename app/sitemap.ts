@@ -26,7 +26,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
   const tagPages: MetadataRoute.Sitemap = NAV_LINKS.map((link) => ({
     url: `${baseUrl}${link.href}`,
     lastModified: new Date(),
-    changeFrequency: "daily",
+    changeFrequency: "daily" as const,
     priority: 0.8,
   })).filter(link => link.url !== baseUrl);
 
@@ -35,7 +35,7 @@ export default async function sitemap(): Promise<MetadataRoute.Sitemap> {
     .map(tag => ({
       url: `${baseUrl}/tag/${tag.slug}`,
       lastModified: new Date(),
-      changeFrequency: "daily",
+      changeFrequency: "daily" as const,
       priority: 0.7,
     }));
 
